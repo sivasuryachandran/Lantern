@@ -1,0 +1,8 @@
+{"patient_id": "101", "display_name": "Patient 101 (fictional)",
+ "chart_version": 3,
+ "orders": [{"id": "ord-diet-1", "type": "diet", "value": "NPO", "reason": "procedure proc-1", "status": "active"}],
+ "schedule": [{"id": "proc-1", "type": "procedure", "name": "Fictional procedure",
+               "scheduled_for": "2026-11-05T09:00", "previously": "2026-11-03T09:00",
+               "changed_at": "2026-11-03T07:40", "changed_by": "dr-lee"}],
+ "medication_given": [{"id": "med-1", "what": "anti-nausea medicine (fictional)", "given_at": "2026-11-03T06:10", "recorded_by": "nurse-ana"}],
+ "care_team": {"doctor": "dr-lee", "nurse": "nurse-ana"}}

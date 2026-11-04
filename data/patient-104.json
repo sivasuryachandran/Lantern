@@ -1,0 +1,6 @@
+{"patient_id": "104", "display_name": "Patient 104 (fictional)",
+ "chart_version": 2,
+ "orders": [{"id": "ord-diet-4", "type": "diet", "value": "low sodium", "reason": "routine", "status": "active"}],
+ "schedule": [],
+ "medication_given": [{"id": "med-4", "what": "pain relief (fictional)", "given_at": "2026-11-03T05:30", "recorded_by": "nurse-ben"}],
+ "care_team": {"doctor": "dr-lee", "nurse": "nurse-ben"}}

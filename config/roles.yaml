@@ -1,0 +1,20 @@
+# Mattermost usernames -> Lantern roles. Resolved to user_ids at startup;
+# the record service only ever matches on user_id. All people are fictional.
+users:
+  patient-101:      {role: patient, patient_id: "101", display: "Patient 101"}
+  patient-102:      {role: patient, patient_id: "102", display: "Patient 102"}
+  nurse-ana:        {role: nurse, shift: outgoing, display: "Nurse Ana"}
+  nurse-ben:        {role: nurse, shift: incoming, display: "Nurse Ben"}
+  dr-lee:           {role: doctor, display: "Dr. Lee"}
+  intake:           {role: agent, display: "intake"}
+  care-coordinator: {role: agent, display: "care-coordinator"}
+  record-bot:       {role: bot, display: "record-bot"}
+
+# Switch room membership (the first boundary). No agent is ever in a patient room.
+rooms:
+  patient-101:   [patient-101, record-bot]
+  patient-102:   [patient-102, record-bot]
+  nurse-station: [nurse-ana, nurse-ben, intake, care-coordinator, record-bot]
+  doctor-review: [dr-lee, nurse-ana, care-coordinator, record-bot]
+
+first_case_number: 17

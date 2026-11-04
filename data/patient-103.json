@@ -1,0 +1,9 @@
+{"patient_id": "103", "display_name": "Patient 103 (fictional)",
+ "chart_version": 5,
+ "orders": [{"id": "ord-activity-3", "type": "activity", "value": "bed rest", "reason": "post-procedure observation", "status": "active"},
+            {"id": "ord-diet-3", "type": "diet", "value": "clear liquids", "reason": "post-procedure", "status": "active"}],
+ "schedule": [{"id": "proc-3", "type": "procedure", "name": "Fictional imaging study",
+               "scheduled_for": "2026-11-04T14:00", "previously": "2026-11-04T10:00",
+               "changed_at": "2026-11-03T08:15", "changed_by": "dr-lee"}],
+ "medication_given": [],
+ "care_team": {"doctor": "dr-lee", "nurse": "nurse-ana"}}
