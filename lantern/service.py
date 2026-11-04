@@ -94,7 +94,8 @@ def seed(db, data_dir, first_case_number=1):
 
 
 def day_time(iso):
-    return datetime.fromisoformat(iso).strftime("%a %-H:%M")
+    d = datetime.fromisoformat(iso)
+    return f"{d:%a} {d.hour}:{d.minute:02d}"
 
 
 def entry_fact(chart, entry):
