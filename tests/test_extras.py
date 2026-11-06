@@ -188,6 +188,24 @@ class TestEvidenceReceipts(unittest.TestCase):
             server.shutdown()
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lookups").fetchone()[0], 1)
 
+    def test_http_forwarded_id_lookup(self):
+        import urllib.error
+        import urllib.request
+        from lantern import actions
+        orig = self.db.execute("SELECT post_id, forwarded_post_id FROM said LIMIT 1").fetchone()
+        server, _ = actions.serve(self.svc, port=0)
+        base = f"http://127.0.0.1:{server.server_address[1]}"
+        try:
+            res = json.loads(urllib.request.urlopen(f"{base}/forwarded/{orig['post_id']}?agent=intake").read())
+            self.assertEqual(res["forwarded_post_id"], orig["forwarded_post_id"])
+            for bad, code in (("/forwarded/nope?agent=intake", 404), (f"/forwarded/{orig['post_id']}?agent=nobody", 403),
+                              (f"/forwarded/{orig['post_id']}?agent=patient-101", 403)):
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    urllib.request.urlopen(base + bad)
+                self.assertEqual(cm.exception.code, code)
+        finally:
+            server.shutdown()
+
 
 class TestTimelineViews(unittest.TestCase):
     def test_timeline_command_is_role_scoped(self):

@@ -206,6 +206,11 @@ class Service:
                 "label": label, "value": value, "agent": agent,
                 "citation": f"[{entry} v{c['chart_version']} · lookup #{n} = {value}]"}
 
+    def forwarded_id(self, original_post_id):
+        """Mattermost id of record-bot's forwarded message for a patient post (read-only; claim validation unchanged)."""
+        row = self.db.execute("SELECT forwarded_post_id FROM said WHERE post_id=?", (original_post_id,)).fetchone()
+        return row["forwarded_post_id"] if row else None
+
     def verify_citation(self, agent, patient_id, entry, version, lookup_id, claimed):
         """-> (status, detail, row) with status verified | stale | unverified. Pure code; no model involved."""
         row = self.db.execute("SELECT * FROM lookups WHERE id=?", (lookup_id,)).fetchone()
