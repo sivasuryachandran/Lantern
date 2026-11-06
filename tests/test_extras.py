@@ -188,6 +188,12 @@ class TestEvidenceReceipts(unittest.TestCase):
             server.shutdown()
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lookups").fetchone()[0], 1)
 
+    def test_switch_progress_posts_get_no_receipt(self):
+        for text in ("**Working… 13s**", "**Worked for 44s. 9 tool calls.**", "**Queued. Waiting for the agent to start…**",
+                     "Starting a session to handle this — one moment."):
+            self.assertEqual(self.coord(text), "", text)
+        self.assertIn("no lookup receipt", self.coord("The patient may eat."))
+
     def test_http_forwarded_id_lookup(self):
         import urllib.error
         import urllib.request

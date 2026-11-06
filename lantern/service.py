@@ -33,6 +33,8 @@ RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
 RE_DECIDE = re.compile(r"^DECIDE Case (\d+) v(\d+) (\w+)=(\w+)\s*\n\s*EXPLAIN:\s*(\S.*)$", re.S)
+# Switch's own progress posts ("Working... 13s", "Queued...", "Starting a session"): no claims, never answered
+RE_STATUS = re.compile(r"^\s*(\*\*(Working|Worked|Queued)|Starting a session)", re.I)
 RE_CITE = re.compile(r"\[([\w-]+)\s+v(\d+)\s*[·|]\s*lookup\s*#(\d+)(?:\s*=\s*([^\]]+))?\]")
 RE_CASE_MENTION = re.compile(r"\bcase\s+#?(\d+)", re.I)
 
@@ -520,7 +522,7 @@ class Service:
             return
         c = self.db.execute("SELECT * FROM cases WHERE doctor_root=? OR nurse_root=?",
                             (post.root_id, post.root_id)).fetchone()
-        if c is None or post.message.lstrip().startswith("NO DATA"):
+        if c is None or post.message.lstrip().startswith("NO DATA") or RE_STATUS.match(post.message):
             return
         cites = RE_CITE.findall(post.message)
         if not cites:
