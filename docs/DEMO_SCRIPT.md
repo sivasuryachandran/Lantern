@@ -1,6 +1,6 @@
 # Demo video script (2:30 to 2:45, every scene from a real run)
 
-Title card: **No concern left in the dark.** Say "fictional data" on screen. Speed up waits in editing, never fake a step. Do three clean runs first, and run `scripts/check_intake.py` before every take.
+Title card: **No concern left in the dark.** Say "fictional data" on screen. Speed up waits in editing, never fake a step. Reset `lantern.db` first so the case is Case 17 (on a fresh database the lookups are #1 and #2, not #31). Do three clean runs first, and run `scripts/check_intake.py` before every take.
 
 | Time | Scene | On screen | Say |
 | --- | --- | --- | --- |
@@ -9,11 +9,11 @@ Title card: **No concern left in the dark.** Say "fictional data" on screen. Spe
 | 0:25 | nurse-station + patient-101 | Case 17 opens; patient sees the fixed template | "The patient hears nothing until the service has checked the quote against the original post." |
 | 0:38 | nurse thread | intake asks; nurse replies CONFIRM (or taps the button) | "intake only asks. A nurse confirms." |
 | 0:52 | doctor-review | care-coordinator calls the lookup tool and cites `[proc-1 v3 · lookup #31]`; record-bot posts the card: **Procedure: Thu 9:00**, source, lookup #31, ✓ verified | "A real coding agent answers from the live chart. Under every cited fact, the system shows what its own log says." |
-| 1:10 | doctor-review | One ⚠ from a real run (wrong value or no lookup number), then the timeline showing the lookup trail | "A claim with no receipt, or the wrong value, never gets a check mark. And a new chart version marks old receipts stale." |
+| 1:10 | doctor-review | One ⚠: in a case thread ask care-coordinator for something it can only answer without a lookup, or post a made-up citation as a test, and keep the real ⚠ that results (never fake one). Then the timeline showing the lookup trail | "A claim with no receipt, or the wrong value, never gets a check mark. And a new chart version marks old receipts stale." |
 | 1:25 | doctor-review | Dr. Lee DECIDE with her explanation; chart v3 to v4 | "Only a verified doctor's decision changes the record." |
 | 1:40 | patient-101 | Her words word for word; "Following up: nurse-ana" | "The patient gets the clinician's own words, and who owns the follow-up." |
 | 1:55 | nurse-station | GIVEN, HANDOFF, incoming nurse ACCEPT; owner line becomes nurse-ben | "A handoff passes responsibility, not just information." |
-| 2:25 | patient-102 | Cannot open patient-101; Case 17 question gets the refusal | "Isolation is Switch room membership. No agent can reach a patient room." |
+| 2:25 | patient-102 | Cannot open patient-101 (403, run live). The "@intake in Town Square gets refused" line is also run live; patient-102 posting about 101's order opening no case is unit-tested only, so show it only if you run it first | "Isolation is Switch room membership. No agent can reach a patient room." |
 | 2:40 | Timeline | Said / simulated chart / given / confirmed / owner | "What was said. What was confirmed. Who owns what's next." |
 
 **Staging rules**
