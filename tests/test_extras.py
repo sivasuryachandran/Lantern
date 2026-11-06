@@ -194,6 +194,12 @@ class TestEvidenceReceipts(unittest.TestCase):
             self.assertEqual(self.coord(text), "", text)
         self.assertIn("no lookup receipt", self.coord("The patient may eat."))
 
+    def test_lookup_label_marks_superseded_orders(self):
+        self.assertEqual(self.lookup("ord-diet-1")["label"], "Diet order")
+        self.svc.handle(self.chat.say("dr-lee", "doctor-review",
+                                      "DECIDE Case 17 v3 diet=regular\nEXPLAIN: ok. - Dr. Lee", self.case["doctor_root"]))
+        self.assertEqual(self.lookup("ord-diet-1")["label"], "Diet order (superseded)")
+
     def test_http_forwarded_id_lookup(self):
         import urllib.error
         import urllib.request

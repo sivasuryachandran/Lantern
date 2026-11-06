@@ -104,7 +104,8 @@ def entry_fact(chart, entry):
     """(label, canonical value) for a chart entry, as the service itself would state it."""
     for o in chart["orders"]:
         if o["id"] == entry:
-            return f"{o['type'].capitalize()} order", o["value"]
+            tag = "" if o.get("status", "active") == "active" else f" ({o['status']})"   # e.g. "Diet order (superseded)"
+            return f"{o['type'].capitalize()} order{tag}", o["value"]
     for e in chart["schedule"]:
         if e["id"] == entry:
             return e["name"], day_time(e["scheduled_for"])
