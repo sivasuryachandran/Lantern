@@ -33,6 +33,8 @@ RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
 RE_DECIDE = re.compile(r"^DECIDE Case (\d+) v(\d+) (\w+)=(\w+)\s*\n\s*EXPLAIN:\s*(\S.*)$", re.S)
+# Switch's own progress posts ("Working... 13s", "Queued...", "Starting a session"): no claims, never answered
+RE_STATUS = re.compile(r"^\s*(\*\*(Working|Worked|Queued)|Starting a session)", re.I)
 RE_CITE = re.compile(r"\[([\w-]+)\s+v(\d+)\s*[·|]\s*lookup\s*#(\d+)(?:\s*=\s*([^\]]+))?\]")
 RE_CASE_MENTION = re.compile(r"\bcase\s+#?(\d+)", re.I)
 
@@ -94,14 +96,16 @@ def seed(db, data_dir, first_case_number=1):
 
 
 def day_time(iso):
-    return datetime.fromisoformat(iso).strftime("%a %-H:%M")
+    d = datetime.fromisoformat(iso)
+    return f"{d:%a} {d.hour}:{d.minute:02d}"
 
 
 def entry_fact(chart, entry):
     """(label, canonical value) for a chart entry, as the service itself would state it."""
     for o in chart["orders"]:
         if o["id"] == entry:
-            return f"{o['type'].capitalize()} order", o["value"]
+            tag = "" if o.get("status", "active") == "active" else f" ({o['status']})"   # e.g. "Diet order (superseded)"
+            return f"{o['type'].capitalize()} order{tag}", o["value"]
     for e in chart["schedule"]:
         if e["id"] == entry:
             return e["name"], day_time(e["scheduled_for"])
@@ -204,6 +208,11 @@ class Service:
         return {"lookup": n, "patient": patient_id, "entry": entry, "version": c["chart_version"],
                 "label": label, "value": value, "agent": agent,
                 "citation": f"[{entry} v{c['chart_version']} · lookup #{n} = {value}]"}
+
+    def forwarded_id(self, original_post_id):
+        """Mattermost id of record-bot's forwarded message for a patient post (read-only; claim validation unchanged)."""
+        row = self.db.execute("SELECT forwarded_post_id FROM said WHERE post_id=?", (original_post_id,)).fetchone()
+        return row["forwarded_post_id"] if row else None
 
     def verify_citation(self, agent, patient_id, entry, version, lookup_id, claimed):
         """-> (status, detail, row) with status verified | stale | unverified. Pure code; no model involved."""
@@ -514,7 +523,7 @@ class Service:
             return
         c = self.db.execute("SELECT * FROM cases WHERE doctor_root=? OR nurse_root=?",
                             (post.root_id, post.root_id)).fetchone()
-        if c is None or post.message.lstrip().startswith("NO DATA"):
+        if c is None or post.message.lstrip().startswith("NO DATA") or RE_STATUS.match(post.message):
             return
         cites = RE_CITE.findall(post.message)
         if not cites:

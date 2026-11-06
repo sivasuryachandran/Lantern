@@ -98,9 +98,15 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 47 tests, no network.
-- `scripts/live_e2e.py`: Case 17 against a real Mattermost with `python -m lantern run` as record-bot. Passed locally. The intake and care-coordinator accounts there are scripted stand-ins, not Switch agents.
-- Not yet run: the Switch agents themselves (and `scripts/check_intake.py`), live buttons, and live Jira/Calendar calls (request shapes are unit-tested against a fake HTTP layer only).
+- `python -m unittest discover -s tests`: 50 tests, no network.
+- `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
+- **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
+  - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
+  - Full Case 17 (patient, intake card, nurse CONFIRM, care-coordinator summary with ✓ evidence cards, doctor DECIDE, chart v3 to v4, patient told) passed three runs in a row on a fresh database.
+  - Refused live: DECIDE from a nurse, from a patient, as a top-level post, and with a stale chart version. Other refusals (edited post, another case's thread) are covered by unit tests only.
+  - GIVEN, HANDOFF and ACCEPT moved ownership from nurse-ana to nurse-ben, with a care-coordinator brief.
+  - patient-102's account gets 403 reading patient-101. Switch refusing intake in a patient room has not been tested.
+- Not yet run: live buttons, and live Jira/Calendar calls (request shapes are unit-tested against a fake HTTP layer only).
 - Known limit: a crash in the middle of a command can drop that command's follow-up message; restarts never duplicate anything.
 - Still to add: the nurse review call (15 minutes, before Thursday) quoted here.
 

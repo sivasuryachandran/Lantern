@@ -1,6 +1,7 @@
 """Local HTTP endpoint for the record service.
 
   GET  /chart/<patient>/<entry>?agent=<name>   chart lookup tool: returns the entry and logs a numbered lookup
+  GET  /forwarded/<original_post_id>?agent=<name>   returns the Mattermost id of record-bot's forwarded message
   GET  /api/...  /healthz                      read-only backend over the database (see lantern/api.py)
   POST /action                                 Mattermost interactive-button clicks (user_id is verified by Mattermost)
 
@@ -40,6 +41,16 @@ def serve(svc, host="127.0.0.1", port=8099):
                     code, ctype, body = api.route(svc, url.path, parse_qs(url.query))
                 return self._send(code, body, ctype)
             key = os.environ.get("LANTERN_LOOKUP_KEY")
+            if len(parts) == 2 and parts[0] == "forwarded":
+                if key and self.headers.get("X-Lookup-Key") != key:
+                    return self._send(403, {"error": "bad lookup key"})
+                agent = (parse_qs(url.query).get("agent") or [self.headers.get("X-Agent", "")])[0]
+                user = svc.roles.by_name(agent) if svc.roles else None
+                if user is None or user.role != "agent":
+                    return self._send(403, {"error": "unknown agent"})
+                with lock:
+                    fwd = svc.forwarded_id(parts[1])
+                return self._send(200, {"original_post_id": parts[1], "forwarded_post_id": fwd}) if fwd                     else self._send(404, {"error": "no forwarded message for that post"})
             if len(parts) != 3 or parts[0] != "chart":
                 return self._send(404, {"error": "use /chart/<patient>/<entry>?agent=<name>"})
             if key and self.headers.get("X-Lookup-Key") != key:
