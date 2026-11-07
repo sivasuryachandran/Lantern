@@ -7,13 +7,14 @@ restart never duplicates a case, a thread root or a patient message.
 import copy
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import time
 from datetime import datetime
 from pathlib import Path
 
-NURSE, DOCTOR, PATIENT_ROOM = "nurse-station", "doctor-review", "patient-{}"
+NURSE, DOCTOR, PATIENT_ROOM, ROOM_SERVICE = "nurse-station", "doctor-review", "patient-{}", "room-service"
 
 POSSIBLE, CONFIRMED, REJECTED, RESOLVED, HANDED_OFF = (
     "POSSIBLE_DISCREPANCY", "CONFIRMED_CONFLICT", "REJECTED", "RESOLVED", "HANDED_OFF")
@@ -32,6 +33,15 @@ RE_REJECT = re.compile(r"^REJECT Case (\d+)\s+(\S.*)$", re.S)
 RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
+RE_ADVICE = re.compile(r"^ADVICE Case (\d+):?\s*(\S.*)$", re.S)
+RE_NOTE = re.compile(r"^NOTE Case (\d+):?\s*(\S.*)$", re.S)
+RE_REMIND = re.compile(r"^REMIND Case (\d+)\s+(.+)$", re.S)
+RE_WHEN = re.compile(r"^(?:in\s+(\d+)\s*m(?:in(?:ute)?s?)?|(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?)\s+(\S.*)$", re.I | re.S)
+RE_DONE = re.compile(r"^DONE (T-[\w-]+)\s*$")
+RE_DISCHARGE = re.compile(r"^DISCHARGE (\d+)\s*$")
+RE_READY = re.compile(r"^READY (4W-\d+)\s*$")
+TURNOVER = [("housekeeping", "Terminal clean of bed, rails and bathroom"), ("linen", "Replace linen and privacy curtain"),
+            ("equipment", "Sanitize bedside equipment"), ("tray", "Collect the meal tray"), ("supplies", "Restock the supply cart")]
 RE_DECIDE = re.compile(r"^DECIDE Case (\d+) v(\d+) (\w+)=(\w+)\s*\n\s*EXPLAIN:\s*(\S.*)$", re.S)
 # Switch's own progress posts ("Working... 13s", "Queued...", "Starting a session"): no claims, never answered
 RE_STATUS = re.compile(r"^\s*(\*\*(Working|Worked|Queued)|Starting a session)", re.I)
@@ -70,6 +80,19 @@ CREATE TABLE IF NOT EXISTS external(case_id INTEGER, kind TEXT, ref TEXT, PRIMAR
 CREATE TABLE IF NOT EXISTS lookups(
   id INTEGER PRIMARY KEY AUTOINCREMENT, ts REAL, agent TEXT, patient_id TEXT, entry TEXT,
   version INTEGER, label TEXT, value TEXT);
+CREATE TABLE IF NOT EXISTS rooms(
+  room TEXT PRIMARY KEY, patient_id TEXT, prev_ref TEXT, prev_discharged TEXT, prev_precautions TEXT, prev_diet TEXT, prev_notes TEXT);
+CREATE TABLE IF NOT EXISTS room_tasks(
+  id TEXT PRIMARY KEY, room TEXT, kind TEXT, text TEXT, status TEXT, done_by TEXT, done_at TEXT, source_case INTEGER, ts REAL);
+CREATE TABLE IF NOT EXISTS reminders(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, post_id TEXT UNIQUE, case_id INTEGER, due_ts REAL, text TEXT, created_by TEXT,
+  status TEXT DEFAULT 'open', ts REAL);
+CREATE TABLE IF NOT EXISTS translations(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, patient_id TEXT, case_id INTEGER, ref TEXT, lang TEXT, text TEXT,
+  agent TEXT, ts REAL, UNIQUE(kind, ref));
+CREATE TABLE IF NOT EXISTS tracking(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER, system TEXT, ref TEXT, url TEXT, summary TEXT, agent TEXT,
+  simulated INTEGER, ts REAL, UNIQUE(case_id, system, ref));
 CREATE TABLE IF NOT EXISTS audit(
   id INTEGER PRIMARY KEY AUTOINCREMENT, post_id TEXT, user_id TEXT, room TEXT,
   action TEXT, outcome TEXT, reason TEXT, ts REAL);
@@ -90,6 +113,15 @@ def seed(db, data_dir, first_case_number=1):
             chart = json.loads(f.read_text())
             db.execute("INSERT OR IGNORE INTO chart_versions VALUES(?,?,?,?,?)",
                        (chart["patient_id"], chart["chart_version"], json.dumps(chart), "seed", time.time()))
+        rooms_file = Path(data_dir) / "rooms.json"
+        if rooms_file.exists():
+            for r in json.loads(rooms_file.read_text())["rooms"]:
+                prev = r["previous"]
+                db.execute("INSERT OR IGNORE INTO rooms VALUES(?,?,?,?,?,?,?)",
+                           (r["room"], r["patient_id"], prev["ref"], prev["discharged_at"], prev["precautions"], prev["diet"], prev["notes"]))
+                for t in r["tasks"]:
+                    db.execute("INSERT OR IGNORE INTO room_tasks VALUES(?,?,?,?,?,?,?,?,?)",
+                               (t["id"], r["room"], t["kind"], t["text"], t["status"], t["done_by"], t["done_at"], None, time.time()))
         if not db.execute("SELECT 1 FROM cases").fetchone() and \
            not db.execute("SELECT 1 FROM sqlite_sequence WHERE name='cases'").fetchone():
             db.execute("INSERT INTO sqlite_sequence(name, seq) VALUES('cases', ?)", (first_case_number - 1,))
@@ -151,6 +183,11 @@ class Service:
         self.db.commit()
         return pid
 
+    def _feed(self, key, room, text):
+        """Post to a ward feed room (orders, medication, room-service) if this ward has it; otherwise do nothing."""
+        if self.roles is not None and room in self.roles.rooms:
+            self._say(key, room, text)
+
     def _say_patient(self, key, patient_id, template, **kw):
         return self._say(key, PATIENT_ROOM.format(patient_id),
                          PATIENT_TEMPLATES[template].format(**kw))
@@ -209,6 +246,23 @@ class Service:
                 "label": label, "value": value, "agent": agent,
                 "citation": f"[{entry} v{c['chart_version']} · lookup #{n} = {value}]"}
 
+    def record_tracking(self, agent, body):
+        """An agent reports that it created a tracked item (a Jira task, a Calendar event) for a case. Recorded once and
+        shown on the timeline; Lantern never creates the item itself here and never treats it as part of the record."""
+        user = self.roles.by_name(agent) if self.roles else None
+        c = self.case(int(body.get("case", 0)))
+        if user is None or user.role != "agent" or c is None or body.get("system") not in ("jira", "calendar"):
+            return {"ok": False}
+        with self.db:
+            cur = self.db.execute("INSERT OR IGNORE INTO tracking(case_id,system,ref,url,summary,agent,simulated,ts) VALUES(?,?,?,?,?,?,?,?)",
+                                  (c["id"], body["system"], str(body["ref"]), body.get("url", ""), body.get("summary", ""), agent,
+                                   1 if body.get("simulated") else 0, self.now()))
+            if cur.rowcount:
+                self._event(c["patient_id"], c["id"], "tracking", agent,
+                            f"{body['system']} {body['ref']}: {body.get('summary', '')}" ,
+                            f"tracking {body['system']}")
+        return {"ok": True, "new": bool(cur.rowcount)}
+
     def forwarded_id(self, original_post_id):
         """Mattermost id of record-bot's forwarded message for a patient post (read-only; claim validation unchanged)."""
         row = self.db.execute("SELECT forwarded_post_id FROM said WHERE post_id=?", (original_post_id,)).fetchone()
@@ -261,6 +315,8 @@ class Service:
                 self._nurse_room_post(post, user)
             elif post.room == DOCTOR:
                 self._doctor_room_post(post, user)
+            elif post.room == ROOM_SERVICE:
+                self._service_room_post(post, user)
         self.db.execute("INSERT OR IGNORE INTO posts_seen VALUES(?)", (post.id,))
         self.db.commit()
 
@@ -284,6 +340,52 @@ class Service:
             return
 
         self._forward(post.id, pid, user.display, post.room, post.message)
+        if user.language != "en":
+            fwd = self.db.execute("SELECT forwarded_post_id FROM said WHERE post_id=?", (post.id,)).fetchone()["forwarded_post_id"]
+            self._say(f"tr:req:{post.id}", NURSE, f"@interpreter Translate to English (patient {pid} wrote in {user.language}), "
+                      f"post {post.id}: {post.message}", fwd)
+
+    def _patient_language(self, patient_id):
+        for u in self.roles._by_name.values():
+            if u.role == "patient" and u.patient_id == str(patient_id):
+                return u.language
+        return "en"
+
+    def record_translation(self, agent, body):
+        """The interpreter agent reports a translation. Staff see it beside the patient's words; the patient sees it beside the
+        doctor's own words, labelled as a translation. Nothing here is a decision, and the original is never replaced."""
+        user = self.roles.by_name(agent) if self.roles else None
+        kind, text, lang = body.get("kind"), (body.get("text") or "").strip(), body.get("lang", "")
+        if user is None or user.role != "agent" or not text or kind not in ("patient_to_staff", "doctor_to_patient"):
+            return {"ok": False}
+        if kind == "patient_to_staff":
+            row = self.db.execute("SELECT * FROM said WHERE post_id=?", (body.get("post_id", ""),)).fetchone()
+            if row is None or not row["forwarded_post_id"]:
+                return {"ok": False}
+            pid, ref, case_id = row["patient_id"], row["post_id"], None
+            with self.db:
+                cur = self.db.execute("INSERT OR IGNORE INTO translations(kind,patient_id,case_id,ref,lang,text,agent,ts) VALUES(?,?,?,?,?,?,?,?)",
+                                      (kind, pid, case_id, ref, lang, text, agent, self.now()))
+            if cur.rowcount:
+                self._say(f"tr:in:{ref}", NURSE, f"Translation ({lang}→en) of Patient {pid}'s message, by {agent} (machine translation; "
+                          f"the quote on any card stays in the patient's own words):\n> {text}", row["forwarded_post_id"])
+                with self.db:
+                    self._event(pid, None, "translation", agent, f"{lang}→en: {text}", f"translation {ref}")
+        else:
+            c = self.case(int(body.get("case", 0)))
+            if c is None:
+                return {"ok": False}
+            pid, ref = c["patient_id"], str(c["id"])
+            with self.db:
+                cur = self.db.execute("INSERT OR IGNORE INTO translations(kind,patient_id,case_id,ref,lang,text,agent,ts) VALUES(?,?,?,?,?,?,?,?)",
+                                      (kind, pid, c["id"], ref, lang, text, agent, self.now()))
+            if cur.rowcount:
+                self._say(f"tr:out:{ref}", PATIENT_ROOM.format(pid),
+                          f"Translation ({lang}) of the doctor's words above, made by a translation assistant. The words above are the "
+                          f"original. Ask your nurse if anything is unclear:\n{text}")
+                with self.db:
+                    self._event(pid, c["id"], "translation", agent, f"en→{lang}: {text}", f"translation case {ref}")
+        return {"ok": True}
 
     def _record_said(self, post_id, pid, room, user_id, actor, text, source):
         self.db.execute("INSERT OR IGNORE INTO said VALUES(?,?,?,?,?,?,?)",
@@ -335,7 +437,8 @@ class Service:
         if user.role != "nurse":
             return
         for rx, fn in ((RE_CONFIRM, self._confirm), (RE_REJECT, self._reject), (RE_GIVEN, self._given),
-                       (RE_HANDOFF, self._handoff), (RE_ACCEPT, self._accept)):
+                       (RE_HANDOFF, self._handoff), (RE_ACCEPT, self._accept),
+                       (RE_DISCHARGE, self._discharge), (RE_READY, self._ready), (RE_REMIND, self._remind), (RE_NOTE, self._note)):
             m = rx.match(msg)
             if m:
                 fn(post, user, m)
@@ -463,6 +566,14 @@ class Service:
                         f"post {post.id}")
         self._audit(post, "GIVEN", "accepted")
         self._reply(post, "givenack", f"Recorded: {m.group(2)} given {m.group(3)} by {user.username}. No order was changed.")
+        twin = self.db.execute("SELECT * FROM meds WHERE patient_id=? AND lower(what)=lower(?) AND post_id!=? ORDER BY ts LIMIT 1",
+                               (c["patient_id"], m.group(2), post.id)).fetchone()
+        if twin is not None:                         # a second entry for the same medicine: flag it, never block or merge it
+            self._feed(f"feed:medwarn:{post.id}", "medication",
+                       f"Possible double entry: patient {c['patient_id']} already has {twin['what']} recorded at {twin['given_at']} "
+                       f"by {twin['recorded_by']}. A nurse or pharmacist should check. Both entries are kept. Fictional data.")
+        self._feed(f"feed:med:{post.id}", "medication",
+                   f"Patient {c['patient_id']}: {m.group(2)} given {m.group(3)}, recorded by {user.display} (Case {c['id']}). No order was changed. Fictional data.")
 
     def _handoff(self, post, user, m):
         if user.shift != "outgoing":
@@ -471,9 +582,13 @@ class Service:
         c = self._case_in_thread(post, m.group(1), "HANDOFF")
         if c is None:
             return
-        if c["state"] != RESOLVED:
-            self._audit(post, "HANDOFF", "rejected", f"case is {c['state']}, not RESOLVED")
+        if c["state"] in (REJECTED, HANDED_OFF):
+            self._audit(post, "HANDOFF", "rejected", f"case is {c['state']}, nothing open to hand off")
             self._reply(post, "rej", f"HANDOFF ignored: Case {c['id']} is {c['state']}.")
+            return
+        if c["owner"] != user.username:                  # open or resolved, only the nurse who owns it can hand it over
+            self._audit(post, "HANDOFF", "rejected", f"only the case owner ({c['owner']}) can hand it off")
+            self._reply(post, "rej", f"HANDOFF ignored: Case {c['id']} is owned by {c['owner']}.")
             return
         with self.db:
             self.db.execute("INSERT OR IGNORE INTO handoffs(case_id,from_nurse,open_text,post_id,ts) VALUES(?,?,?,?,?)",
@@ -506,11 +621,13 @@ class Service:
             self.db.execute("UPDATE handoffs SET accepted_by=?, accept_post_id=? WHERE id=?",
                             (user.username, post.id, pending["id"]))
             self.db.execute("UPDATE tasks SET owner=?, accepted=1 WHERE case_id=?", (user.username, c["id"]))
-            self.db.execute("UPDATE cases SET state=?, owner=? WHERE id=?", (HANDED_OFF, user.username, c["id"]))
+            # a resolved case becomes HANDED_OFF; an open case keeps its clinical state (it is still waiting on the doctor)
+            self.db.execute("UPDATE cases SET state=?, owner=? WHERE id=?",
+                            (HANDED_OFF if c["state"] == RESOLVED else c["state"], user.username, c["id"]))
             self._event(c["patient_id"], c["id"], "task", user.username,
                         f"accepted the follow-up; owner is now {user.username}", f"post {post.id}")
         self._audit(post, "ACCEPT", "accepted")
-        self._reply(post, "acceptack", f"Case {c['id']} follow-up accepted by {user.username}.")
+        self._reply(post, "acceptack", f"Case {c['id']} follow-up accepted by {user.username}. @scribe the shift record is up to date.")
         self._say_patient(f"owner:{c['id']}:{user.username}", c["patient_id"], "owner", owner=user.username)
         self._notify("on_accept", c["id"], user.username)
 
@@ -553,10 +670,61 @@ class Service:
             return
         if user.role == "agent":
             return self._check_agent_claims(post, user)
+        r = RE_REMIND.match(post.message.strip())
+        if r and user.role in ("doctor", "nurse"):
+            return self._remind(post, user, r)
+        nt = RE_NOTE.match(post.message.strip())
+        if nt and user.role in ("doctor", "nurse"):
+            return self._note(post, user, nt)
+        a = RE_ADVICE.match(post.message.strip())
+        if a:
+            return self._advice(post, user, a)
         m = RE_DECIDE.match(post.message.strip())
         if not m:
             return
         self._decide(post, user, m)
+
+    def _advice(self, post, user, m):
+        """ADVICE Case N: <free words>. A doctor's spoken or dictated advice, recorded as advice and never as a decision.
+        Record-bot offers a draft DECIDE when the words name a change to an active order; the doctor reviews it and sends it herself."""
+        number, text = int(m.group(1)), m.group(2).strip()
+        c = self.case(number)
+        if user.role != "doctor":
+            return self._audit(post, "ADVICE", "rejected", "only a doctor can record advice")
+        if c is None or not c["doctor_root"] or post.root_id != c["doctor_root"]:
+            return self._audit(post, "ADVICE", "rejected", "must be a reply in that case's doctor thread")
+        if c["state"] != CONFIRMED:
+            return self._audit(post, "ADVICE", "rejected", f"case is {c['state']}, not CONFIRMED_CONFLICT")
+        chart = self.chart(c["patient_id"])
+        with self.db:
+            self._event(c["patient_id"], number, "advice", user.username,
+                        f"dictated advice, not a decision: {text}", f"post {post.id}")
+        self._audit(post, "ADVICE", "accepted")
+        draft = self._draft_decide(chart, number, text)
+        body = (f"Advice recorded for Case {number} (dictated by {user.display}; it is not a decision and nothing was changed). "
+                f"@care-coordinator please prepare a DECIDE for {user.display} to review. Do not post a DECIDE yourself.")
+        if draft:
+            body += (f"\nDraft for {user.display} to check (nothing is applied until she sends it):\n```\n"
+                     f"DECIDE Case {number} v{chart['chart_version']} {draft[0]}={draft[1]}\nEXPLAIN: {text}\n```")
+        else:
+            body += "\nI could not read a change to an active order from these words, so there is no draft. Write the DECIDE yourself."
+        self._say(f"advice:{post.id}", DOCTOR, body, c["doctor_root"])
+
+    STOP = {"the", "a", "an", "is", "to", "be", "now", "can", "may", "she", "he", "they", "of", "order", "today", "for", "her", "his", "and", "on"}
+
+    def _draft_decide(self, chart, number, text):
+        """(topic, value) if the advice clearly names a new value for exactly one active order type, else None. Plain rules, no model."""
+        found = set()
+        for o in chart["orders"]:
+            if o["status"] != "active":
+                continue
+            t = o["type"]
+            for rx in (rf"\b{t}\b\s*(?:order\s*)?(?:(?:to|is|should be|can be|now)\b\s*|[=:]\s*)?([a-z]+)\b", rf"\b([a-z]+)\s+{t}\b"):
+                for mm in re.finditer(rx, text, re.I):
+                    w = mm.group(1).lower()
+                    if w not in self.STOP and w != t:
+                        found.add((t, w))
+        return next(iter(found)) if len(found) == 1 else None
 
     def _decide(self, post, user, m):
         number, version, otype, value, explanation = int(m.group(1)), int(m.group(2)), m.group(3), m.group(4), m.group(5)
@@ -594,18 +762,16 @@ class Service:
                                  f"{otype}: {active[0]['value']} -> {value}", explanation, self.now()))
                 self.db.execute("INSERT INTO chart_versions VALUES(?,?,?,?,?)",
                                 (c["patient_id"], version + 1, json.dumps(new), user.username, self.now()))
-                self.db.execute("UPDATE cases SET state=?, owner=? WHERE id=?",
-                                (RESOLVED, chart["care_team"]["nurse"], number))
+                self.db.execute("UPDATE cases SET state=? WHERE id=?", (RESOLVED, number))       # the owner stays whoever holds it now
                 self.db.execute("INSERT OR IGNORE INTO tasks VALUES(?,?,?,0)",
-                                (number, "confirm the patient received the doctor's explanation",
-                                 chart["care_team"]["nurse"]))
+                                (number, "confirm the patient received the doctor's explanation", c["owner"]))
                 self._event(c["patient_id"], number, "decision", user.username,
                             f"{otype} {active[0]['value']} -> {value}; explanation sent to patient",
                             f"post {post.id}")
                 self._event(c["patient_id"], number, "chart", "record-service",
                             f"simulated chart v{version} -> v{version + 1}", f"post {post.id}")
                 self._event(c["patient_id"], number, "task", "record-service",
-                            f"follow-up owner: {chart['care_team']['nurse']}", f"post {post.id}")
+                            f"follow-up owner: {c['owner']}", f"post {post.id}")
             self._audit(post, "DECIDE", "accepted")
             c = self.case(number)
         else:
@@ -617,12 +783,206 @@ class Service:
                   f"{d['explanation']}\n- {doctor.display}, confirmed on Case {number}")
         first = self._first_owner(number)
         self._say_patient(f"owner:{number}:{first}", c["patient_id"], "owner", owner=first)
+        lang = self._patient_language(c["patient_id"])
+        if lang != "en":
+            self._say(f"tr:dreq:{number}", DOCTOR, f"@interpreter Translate to {lang} for patient {c['patient_id']} (Case {number}); "
+                      f"it will be shown beside Dr. Lee's own words: {d['explanation']}", c["doctor_root"])
         self._say(f"case:{number}:doctor_ack", DOCTOR,
                   f"Case {number} resolved: simulated chart now v{d['to_version']} ({d['change']}). "
                   f"Explanation sent to the patient word for word.", c["doctor_root"])
+        self._feed(f"feed:orders:{number}", "orders",
+                   f"Patient {c['patient_id']}: {d['change']}. Simulated chart v{d['from_version']} -> v{d['to_version']}, "
+                   f"decided by {doctor.display} (Case {number}). Fictional data.")
+        if d["change"].startswith("diet"):
+            task_id = f"T-{c['patient_id']}-D{number}"
+            self._open_room_task(task_id, c["patient_id"], "tray", f"Update the tray: {d['change']} (Case {number})", number)
+            self._feed(f"feed:room-service:{number}", "room-service",
+                       f"Patient {c['patient_id']}: {d['change']} (simulated chart v{d['to_version']}). Update the tray. "
+                       f"Task {task_id}: reply DONE {task_id} when it is delivered. Fictional data.")
         self._notify("on_resolved", number, first)
 
+    # ------------------------------------------------------------ room service
+    def room_for(self, patient_id):
+        row = self.db.execute("SELECT room FROM rooms WHERE patient_id=?", (patient_id,)).fetchone()
+        return row["room"] if row else f"4W-{patient_id}"
+
+    def _open_room_task(self, task_id, patient_id, kind, text, case_number):
+        """Create a room task once (idempotent). Returns True if it was newly created."""
+        with self.db:
+            cur = self.db.execute("INSERT OR IGNORE INTO room_tasks VALUES(?,?,?,?,?,?,?,?,?)",
+                                  (task_id, self.room_for(patient_id), kind, text, "open", "", "", case_number, self.now()))
+            if cur.rowcount:
+                self._event(patient_id, case_number, "service", "record-service",
+                            f"room task {task_id} opened for room service: {text}", f"task {task_id}")
+        if cur.rowcount:
+            self._notify_task(task_id)
+        return bool(cur.rowcount)
+
+    def _notify_task(self, task_id):
+        task = self.db.execute("SELECT * FROM room_tasks WHERE id=?", (task_id,)).fetchone()
+        for integ in self.integrations:
+            hook = getattr(integ, "on_room_task", None)
+            if hook is None:
+                continue
+            try:
+                note = hook(dict(task), self.db)
+            except Exception as e:                       # an integration failing never blocks the loop
+                note = f"{type(integ).__name__} failed: {e}"
+            if note:
+                self._event(self.db.execute("SELECT patient_id FROM rooms WHERE room=?", (task["room"],)).fetchone()["patient_id"],
+                            task["source_case"], "task", "integration", note)
+                self.db.commit()
+
+    def _discharge(self, post, user, m):
+        """DISCHARGE <patient>: a nurse starts the room turnover. Opens the checklist for room service; changes no order."""
+        pid = m.group(1)
+        if self.chart(pid) is None:
+            self._audit(post, "DISCHARGE", "rejected", "unknown patient")
+            return
+        room = self.room_for(pid)
+        n = self.db.execute("SELECT COUNT(*) c FROM room_tasks WHERE id LIKE ?", (f"T-{pid}-X%-1",)).fetchone()["c"] + 1
+        ids = []
+        for i, (kind, text) in enumerate(TURNOVER, 1):
+            tid = f"T-{pid}-X{n}-{i}"
+            if self._open_room_task(tid, pid, kind, text, None):
+                ids.append(tid)
+        self._audit(post, "DISCHARGE", "accepted")
+        self._feed(f"feed:discharge:{post.id}", "room-service",
+                   f"Patient {pid} discharged: {len(ids)} turnover tasks for {room}: {', '.join(ids)}. "
+                   f"Room service: reply DONE <task id> as each is finished. Fictional data.")
+        self._reply(post, "dischargeack", f"Discharge recorded for patient {pid}. {len(ids)} turnover tasks opened for {room}.")
+
+    def _ready(self, post, user, m):
+        """READY <room>: is the room ready for the next patient? Answers from the task list and the previous occupant's precautions."""
+        r = self.db.execute("SELECT * FROM rooms WHERE room=?", (m.group(1),)).fetchone()
+        if r is None:
+            self._audit(post, "READY", "rejected", "unknown room")
+            return
+        open_ = [t["id"] for t in self.db.execute("SELECT id FROM room_tasks WHERE room=? AND status='open' ORDER BY id", (r["room"],))]
+        prec = "" if r["prev_precautions"] in ("", "none") else f" Previous occupant: {r['prev_precautions']}."
+        self._audit(post, "READY", "accepted")
+        self._reply(post, "readyans", f"{r['room']} is READY: all turnover tasks done.{prec}" if not open_ else
+                    f"{r['room']} is NOT ready: {len(open_)} open task(s): {', '.join(open_)}.{prec} A nurse decides; nothing was changed.")
+
+    def remind_overdue(self, minutes=None):
+        """Post one reminder per room task that has been open longer than `minutes` (LANTERN_TASK_AGING_MIN; unset means off)."""
+        minutes = minutes if minutes is not None else float(os.environ.get("LANTERN_TASK_AGING_MIN", "0") or 0)
+        if minutes <= 0 or self.roles is None:
+            return 0
+        cutoff, sent = self.now() - minutes * 60, 0
+        for t in self.db.execute("SELECT * FROM room_tasks WHERE status='open' AND ts<? ORDER BY id", (cutoff,)).fetchall():
+            age = int((self.now() - t["ts"]) // 60)
+            self._feed(f"feed:overdue:{t['id']}", "room-service",
+                       f"Reminder: {t['id']} ({t['text']}, {t['room']}) has been open {age} minutes. "
+                       f"Room service or the charge nurse: reply DONE {t['id']} or say what is blocking it. Fictional data.")
+            sent += 1
+        return sent
+
+    def _remind(self, post, user, m):
+        """REMIND Case N <HH:MM | 9am | in 20 min> <what>: a nurse or doctor sets a follow-up reminder on a case.
+        Recorded here, posted back into the case thread when it is due, and mirrored to Calendar if that is configured."""
+        number, rest = int(m.group(1)), m.group(2).strip()
+        c = self.case(number)
+        if user.role not in ("nurse", "doctor"):
+            return self._audit(post, "REMIND", "rejected", "only a nurse or doctor can set a reminder")
+        root = c["doctor_root"] if c and post.room == DOCTOR else (c["nurse_root"] if c else None)
+        if c is None or not root or post.root_id != root:
+            return self._audit(post, "REMIND", "rejected", "must be a reply in that case's thread")
+        w = RE_WHEN.match(rest)
+        if not w:
+            return self._audit(post, "REMIND", "rejected", "say when: HH:MM, 9am, or in 20 min")
+        now = self.now()
+        if w.group(1):
+            due = now + int(w.group(1)) * 60
+        else:
+            h, mi, ap = int(w.group(2)), int(w.group(3) or 0), (w.group(4) or "").lower().replace(".", "")
+            if ap == "pm" and h < 12:
+                h += 12
+            if ap == "am" and h == 12:
+                h = 0
+            if h > 23 or mi > 59:
+                return self._audit(post, "REMIND", "rejected", "not a time of day")
+            t = datetime.fromtimestamp(now).replace(hour=h, minute=mi, second=0, microsecond=0)
+            due = t.timestamp() if t.timestamp() > now else (t.timestamp() + 86400)
+        text = w.group(5).strip()
+        with self.db:
+            cur = self.db.execute("INSERT OR IGNORE INTO reminders(post_id,case_id,due_ts,text,created_by,ts) VALUES(?,?,?,?,?,?)",
+                                  (post.id, number, due, text, user.username, now))
+            if cur.rowcount:
+                self._event(c["patient_id"], number, "reminder", user.username,
+                            f"reminder set for {datetime.fromtimestamp(due):%H:%M}: {text}", f"post {post.id}")
+        self._audit(post, "REMIND", "accepted")
+        if cur.rowcount:
+            rid = cur.lastrowid
+            for integ in self.integrations:
+                hook = getattr(integ, "on_reminder", None)
+                if hook is None:
+                    continue
+                try:
+                    note = hook(dict(self.db.execute("SELECT * FROM reminders WHERE id=?", (rid,)).fetchone()), c, self.db)
+                except Exception as e:                       # an integration failing never blocks the loop
+                    note = f"{type(integ).__name__} failed: {e}"
+                if note:
+                    self._event(c["patient_id"], number, "task", "integration", note)
+                    self.db.commit()
+        self._reply(post, "remindack", f"Reminder set for {datetime.fromtimestamp(due):%H:%M} on Case {number}: {text} "
+                    f"(owner {c['owner']}). @care-coordinator please add it to {c['owner']}'s calendar.")
+
+    def _note(self, post, user, m):
+        """NOTE Case N: free words. A dictated note for the record. It is filed as a note, never as an order or a decision."""
+        number, text = int(m.group(1)), m.group(2).strip()
+        c = self.case(number)
+        root = c["doctor_root"] if c and post.room == DOCTOR else (c["nurse_root"] if c else None)
+        if user.role not in ("nurse", "doctor") or c is None or not root or post.root_id != root:
+            return self._audit(post, "NOTE", "rejected", "only staff, as a reply in that case's thread")
+        with self.db:
+            self._event(c["patient_id"], number, "note", user.username, f"dictated note: {text}", f"post {post.id}")
+        self._audit(post, "NOTE", "accepted")
+        self._reply(post, "noteack", f"Note recorded on Case {number} (dictated by {user.display}; a note changes nothing). @scribe")
+
+    def fire_reminders(self):
+        """Post each due reminder into its case thread, once. Called from the bot loop."""
+        if self.roles is None:
+            return 0
+        sent = 0
+        for r in self.db.execute("SELECT * FROM reminders WHERE status='open' AND due_ts<=? ORDER BY id", (self.now(),)).fetchall():
+            c = self.case(r["case_id"])
+            if c and c["nurse_root"]:
+                self._say(f"remind:{r['id']}", NURSE, f"Reminder due for Case {r['case_id']}: {r['text']} (set by {r['created_by']}). "
+                          f"Owner: {c['owner']}.", c["nurse_root"])
+                self._event(c["patient_id"], r["case_id"], "reminder", "record-service", f"reminder due: {r['text']}", f"reminder {r['id']}")
+            with self.db:
+                self.db.execute("UPDATE reminders SET status='sent' WHERE id=?", (r["id"],))
+            sent += 1
+        return sent
+
+    def _service_room_post(self, post, user):
+        """DONE <task id>: room service closes a room task (tray, linen, cleaning, supplies). Only room service can."""
+        m = RE_DONE.match(post.message.strip())
+        if not m:
+            return
+        if user.role != "service":
+            self._audit(post, "DONE", "rejected", "only room-service staff can close a room task")
+            return
+        task = self.db.execute("SELECT * FROM room_tasks WHERE id=?", (m.group(1),)).fetchone()
+        if task is None:
+            self._audit(post, "DONE", "rejected", "unknown task id")
+            self._say(f"svc:unknown:{post.id}", ROOM_SERVICE, f"No task {m.group(1)}.", post.id)
+            return
+        if task["status"] == "done":
+            self._audit(post, "DONE", "ignored", f"already done by {task['done_by']}")
+            return
+        pid = self.db.execute("SELECT patient_id FROM rooms WHERE room=?", (task["room"],)).fetchone()["patient_id"]
+        with self.db:
+            self.db.execute("UPDATE room_tasks SET status='done', done_by=?, done_at=? WHERE id=?",
+                            (user.username, datetime.now().strftime("%Y-%m-%dT%H:%M"), task["id"]))
+            self._event(pid, task["source_case"], "service", user.username,
+                        f"room task {task['id']} done: {task['text']}", f"post {post.id}")
+        self._audit(post, "DONE", "accepted")
+        left = self.db.execute("SELECT COUNT(*) n FROM room_tasks WHERE room=? AND status='open'", (task["room"],)).fetchone()["n"]
+        self._say(f"svc:done:{task['id']}", ROOM_SERVICE,
+                  f"Recorded: {task['id']} done by {user.display} ({task['text']}). {task['room']} has {left} open task(s).", post.id)
+
     def _first_owner(self, number):
-        """The nurse the follow-up task was created for (before any handoff)."""
-        chart = self.chart(self.case(number)["patient_id"])
-        return chart["care_team"]["nurse"]
+        """The nurse who owns the case now (the care-team nurse, or whoever accepted a handoff while it was still open)."""
+        return self.case(number)["owner"]

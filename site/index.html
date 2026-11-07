@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern · No concern left in the dark</title>
+<meta name="description" content="Lantern keeps a shared record of concerns, decisions and handoffs beside the clinical chart. Fictional-data hackathon demo built on Switch.">
+<meta name="theme-color" content="#0A101C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 48'%3E%3Cpath d='M8 12h14l2 22H6z' fill='%23F5B544'/%3E%3Cpath d='M8 12l7-6 7 6' fill='none' stroke='%23F5B544' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+<div class="wrap">
+  <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
+  <nav class="nav-links" id="navlinks" aria-label="Main">
+    <a href="how-it-works.html">How it works</a>
+    <a href="features.html">Features</a>
+    <a href="built-on-switch.html">Built on Switch</a>
+    <a href="cases.html">Cases</a>
+    <a href="technical.html">Technical</a>
+    <a href="about.html">About</a>
+    <a href="index.html#film">Film</a>
+    <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <span class="badge">Fictional data · not for clinical use</span>
+    <a class="gh" href="https://github.com/sivasuryachandran/Lantern" aria-label="Lantern on GitHub"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.200 1.900.9 2.300.7.1-.5.3-.9.5-1.100-1.800-.2-3.600-.9-3.600-4 0-.9.3-1.600.8-2.100-.1-.2-.4-1 .1-2.100 0 0 .7-.2 2.200.8a7.500 7.500 0 0 1 4 0c1.500-1 2.200-.8 2.200-.8.4 1.100.2 1.900.1 2.100.5.6.8 1.300.8 2.100 0 3.100-1.900 3.800-3.600 4 .3.3.6.8.6 1.500v2.200c0 .2.1.5.6.4A8 8 0 0 0 8 0z"/></svg>GitHub</a>
+  </div>
+  <button class="menu-btn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+</div>
+<div class="m-strip"><span class="badge">Fictional data · not for clinical use</span></div>
+</header>
+
+<main id="main">
+<section class="hero" id="hero" style="padding-top:64px">
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">A Flip the Switch hackathon project</p>
+      <h1>No concern left in the dark.</h1>
+      <p class="sub">What was said. What was confirmed. Who owns what's next.</p>
+      <p class="lead">Lantern keeps a shared record of concerns, decisions and handoffs beside the clinical chart, so a patient's words, a clinician's confirmed answer, and the next shift's owner never drift apart.</p>
+      <div class="actions">
+        <a class="btn primary" href="#film">Watch the concept film</a>
+        <a class="btn" href="how-it-works.html">How it works</a>
+        <a class="btn" href="cases.html">View all cases</a>
+      </div>
+    </div>
+    <div class="visual">
+      <div class="case-card" role="group" aria-label="Case 17 summary: what was said, what was confirmed, who owns what's next">
+        <div class="case-head"><span class="id">Case 17 · patient-101</span><span class="chip violet">HANDED OFF</span></div>
+        <div class="cols">
+          <div class="col"><h4>What was said</h4>
+            <p class="q">"Can't wait for breakfast. <u>Dr. Lee said it's fine now that my procedure moved.</u>"</p>
+            <p class="muted mono">chart v3 · diet = NPO</p></div>
+          <div class="col"><h4>What was confirmed</h4>
+            <p>Nurse confirmed the conflict.</p>
+            <p>Dr. Lee decided: diet regular. Chart v3 → v4.</p>
+            <p><span class="chip green">✓ VERIFIED</span></p></div>
+          <div class="col"><h4>Who owns what's next</h4>
+            <p>Following up: <b>nurse-ana</b></p>
+            <p class="muted">Handoff accepted at shift change.</p>
+            <p>Following up: <b>nurse-ben</b></p></div>
+        </div>
+        <div class="wire" data-wire="Said|Flagged|Confirmed|Receipted|Decided|Handed off" aria-label="Six lanterns lighting in order as the case moves from said to handed off"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="gap">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">The gap</p><h2 id="gap">Three places a concern can go quiet.</h2>
+    <p class="lead">Care is full of short conversations. The words and the answers can end up in different places.</p></div>
+    <div class="grid3">
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg><h3>Said in passing</h3><p class="muted">A patient mentions something to whoever is nearby. It may never reach the chart, or reach it reworded.</p></div>
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><h3>Confirmed somewhere</h3><p class="muted">A nurse or doctor answers out loud. Nothing shows later who confirmed what, or on which version of the chart.</p></div>
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg><h3>Lost at shift change</h3><p class="muted">The next shift inherits an open question without an owner who agreed to take it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="film" aria-labelledby="filmh">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Featured film</p><h2 id="filmh">A 50-second concept film.</h2>
+    <p class="lead">An abstract, typographic story of one concern. It is a concept film, not a recording of a live run.</p></div>
+    <figure class="film reveal">
+      <video controls preload="metadata" poster="../film/poster.jpg" aria-label="Lantern concept film">
+        <source src="../film/lantern-film.mp4" type="video/mp4">
+        Your browser can't play this video.
+      </video>
+      <figcaption>Concept film · fictional · built on Switch. The full 3-minute demo video is linked in the footer once published.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section aria-labelledby="think">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">How Lantern thinks</p><h2 id="think">Agents notice. People decide. Code enforces.</h2></div>
+    <div class="grid3">
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><h3>Agents notice</h3><p class="muted"><b>intake</b> flags a possible discrepancy and quotes the patient exactly. <b>care-coordinator</b> carries the case to the doctor, citing where each fact came from. Neither can change the chart.</p></div>
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><h3>People decide</h3><p class="muted">A nurse confirms the conflict. Only a verified doctor's decision changes the chart, and the patient gets the doctor's own words.</p></div>
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><h3>Code enforces</h3><p class="muted">A small record service checks the quote, the role, the room, the thread and the chart version. It is the only thing that says "resolved" or speaks to a patient.</p></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="sw">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Built on Switch</p><h2 id="sw">Teammates in the room, not a chatbot in a corner.</h2>
+    <p class="lead">Switch puts AI agents into Mattermost rooms next to the people: nurses, the doctor, room service. Lantern uses that for the teamwork, and keeps isolation as room membership, not as a prompt.</p></div>
+    <div class="stats reveal" role="list">
+      <div class="stat" role="listitem"><b>4</b><span>agent roles: intake, care-coordinator, interpreter, scribe</span></div>
+      <div class="stat" role="listitem"><b>9</b><span>private rooms, 4 of them patients'</span></div>
+      <div class="stat" role="listitem"><b>✓</b><span>every cited fact receipted</span></div>
+      <div class="stat" role="listitem"><b>0</b><span>agents in patient rooms</span></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="guard">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Guardrails, live</p><h2 id="guard">Every refusal and every receipt is on the record.</h2></div>
+    <div class="feed reveal" role="list" aria-label="Example guardrail rows">
+      <div class="feed-row bad" role="listitem"><span class="chip red">REFUSED</span><span class="what">DECIDE Case 17 by nurse-ana in doctor-review<span class="why">only a verified doctor can decide</span></span><span class="muted mono">audit</span></div>
+      <div class="feed-row good" role="listitem"><span class="chip green">✓ VERIFIED</span><span class="what">care-coordinator cited <span class="mono">[proc-1 v3 · lookup #31 = Thu 9:00]</span><span class="why">matches the service's own lookup log</span></span><span class="muted mono">receipt</span></div>
+    </div>
+    <p class="muted" style="margin-top:12px;font-size:.85rem">Illustrative rows in the shape the record service writes. Fictional data.</p>
+  </div>
+</section>
+
+
+<section aria-labelledby="what">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">What Lantern does</p><h2 id="what">One ward, start to finish.</h2>
+    <p class="lead">Everything below is built, tested and shown in the demo. <a href="features.html">See the full feature list.</a></p></div>
+    <div class="grid3">
+      <div class="card reveal"><h3>Concerns, caught</h3><p class="muted">A patient's passing remark is checked against their orders. The quote stays word for word, and a nurse confirms before anything moves.</p></div>
+      <div class="card reveal"><h3>Receipts for every fact</h3><p class="muted">Agents cite a logged lookup. The service marks it verified or stale from its own log, never from the agent's words.</p></div>
+      <div class="card reveal"><h3>The doctor decides</h3><p class="muted">Only a verified doctor's decision changes the chart, and the patient gets the doctor's own words.</p></div>
+      <div class="card reveal"><h3>Voice in, voice out</h3><p class="muted">Dictate advice, reminders and notes with Wispr Flow. An interpreter agent translates both ways and reads aloud, always beside the original.</p></div>
+      <div class="card reveal"><h3>The whole ward</h3><p class="muted">Orders, medicines, room service, discharge turnover, room history and a shift record, all in the same record.</p></div>
+      <div class="card reveal"><h3>Handoffs that stick</h3><p class="muted">The owner hands over open and resolved cases. The next nurse accepts, and ownership changes everywhere. Jira and Calendar follow.</p></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="spons">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Built for Flip the Switch</p><h2 id="spons">Hosts and partners.</h2></div>
+    <div class="grid4 reveal" style="gap:14px">
+      <div class="card"><h3 style="font-size:1.2rem">Switch</h3><p class="muted">The infrastructure Lantern is built on: rooms, agents and Mattermost.</p></div>
+      <div class="card"><h3 style="font-size:1.2rem">WeMakeDevs</h3><p class="muted">Host of the hackathon (Nov 4 to 7, 2026).</p></div>
+      <div class="card"><h3 style="font-size:1.2rem">DevTools Academy</h3><p class="muted">Co-host of the hackathon.</p></div>
+      <div class="card"><h3 style="font-size:1.2rem">Wispr Flow</h3><p class="muted">Side-track partner. We build and run Lantern by voice.</p></div>
+    </div>
+    <p class="muted reveal" style="margin-top:14px;font-size:.9rem">Entered for: Best Business Workflow, Code with Wispr, Best Blog and #HowISwitch.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap"><div class="cta reveal">
+    <h2>See one concern travel the whole way.</h2>
+    <p class="lead" style="margin:0 auto">From a patient's passing remark to a confirmed answer and an owner for the next shift.</p>
+    <div class="actions"><a class="btn primary" href="how-it-works.html">How it works</a><a class="btn" href="cases.html">View all cases</a><a class="btn" href="https://github.com/sivasuryachandran/Lantern">View the code</a></div>
+  </div></div>
+</section>
+</main>
+<footer>
+<div class="wrap">
+  <div>
+    <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
+    <p>Built for the Flip the Switch hackathon, hosted by WeMakeDevs and DevTools Academy, on Switch. Voice-first with Wispr Flow. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+  </div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
+    <li><a href="#" data-placeholder>Demo video [LINK]</a></li>
+    <li><a href="#" data-placeholder>Blog [LINK]</a></li>
+  </ul>
+</div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

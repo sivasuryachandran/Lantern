@@ -27,7 +27,8 @@ class TestIntegrations(unittest.TestCase):
                                  {"nurse-ana": "acc-ana", "nurse-ben": "acc-ben"}, http),
                             GoogleCalendar("tok", "care", http=http)]
         full_run(chat, svc)
-        create = [c for c in http.calls if c[0] == "POST" and "issue" in c[1]]
+        create = [c for c in http.calls if c[0] == "POST" and "issue" in c[1]
+                  and c[2]["fields"]["summary"].startswith("Case")]           # the case task; the tray task is tested apart
         self.assertEqual(len(create), 1)
         self.assertIn("Case 17", create[0][2]["fields"]["summary"])
         assigns = [c[2]["accountId"] for c in http.calls if c[0] == "PUT"]
@@ -306,3 +307,304 @@ class TestBackendApi(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError) as cm:
                 urllib.request.urlopen(self.base + path)
             self.assertEqual(cm.exception.code, code, path)
+
+
+class TestWardFeeds(unittest.TestCase):
+    """Orders, medication and room-service are write-only staff feeds; nothing there can change the record."""
+
+    def test_decision_reaches_orders_and_room_service_and_given_reaches_medication(self):
+        chat, roles, db, svc = make_env()
+        full_run(chat, svc)
+        orders = [p["message"] for p in chat.bot_posts("orders")]
+        self.assertEqual(len(orders), 1)
+        self.assertIn("v3 -> v4", orders[0])
+        self.assertIn("Dr. Lee", orders[0])
+        tray = [p["message"] for p in chat.bot_posts("room-service")]
+        self.assertEqual(len(tray), 1)
+        self.assertIn("diet", tray[0])
+        given = [p["message"] for p in chat.bot_posts("medication")]
+        self.assertEqual(len(given), 1)
+        self.assertIn("No order was changed", given[0])
+
+    def test_refused_decision_posts_nothing_to_the_feeds(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        decide(chat, svc, case, user="nurse-ana")          # a nurse cannot decide
+        for room in ("orders", "room-service", "medication"):
+            self.assertEqual(chat.bot_posts(room), [])
+
+    def test_replay_does_not_duplicate_feed_posts(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        post = chat.say("dr-lee", "doctor-review", f"DECIDE Case {case['id']} v3 diet=regular\nEXPLAIN: You can eat. - Dr. Lee",
+                        case["doctor_root"])
+        svc.handle(post)
+        svc.handle(post)                                  # the same post delivered again after a restart
+        self.assertEqual(len(chat.bot_posts("orders")), 1)
+        self.assertEqual(len(chat.bot_posts("room-service")), 1)
+
+    def test_feeds_have_no_agents_and_no_patients(self):
+        chat, roles, db, svc = make_env()
+        for room in ("orders", "medication", "room-service"):
+            for member in roles.rooms[room]:
+                self.assertIn(roles.by_name(member).role, ("nurse", "doctor", "bot", "service"))
+        self.assertEqual(roles.agents_in_patient_rooms(), [])
+        self.assertEqual(sorted(r for r in roles.rooms if r.startswith("patient-")),
+                         ["patient-101", "patient-102", "patient-103", "patient-104"])
+
+
+class TestRoomsAndRoomService(unittest.TestCase):
+    def say_done(self, chat, svc, user, task, room="room-service"):
+        svc.handle(chat.say(user, room, f"DONE {task}"))
+
+    def test_rooms_hold_previous_occupant_and_turnover_state(self):
+        chat, roles, db, svc = make_env()
+        r = db.execute("SELECT * FROM rooms WHERE room='4W-102'").fetchone()
+        self.assertEqual(r["patient_id"], "102")
+        self.assertIn("contact precautions", r["prev_precautions"])
+        states = {t["id"]: t["status"] for t in db.execute("SELECT * FROM room_tasks WHERE room='4W-102'")}
+        self.assertEqual(states["T-102-1"], "done")
+        self.assertEqual(states["T-102-3"], "open")
+
+    def test_diet_decision_opens_a_tray_task_and_room_service_closes_it(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        decide(chat, svc, case)
+        task = db.execute("SELECT * FROM room_tasks WHERE source_case=?", (case["id"],)).fetchone()
+        self.assertEqual((task["kind"], task["status"], task["room"]), ("tray", "open", "4W-101"))
+        self.assertIn(f"DONE {task['id']}", chat.bot_posts("room-service")[-1]["message"])
+        self.say_done(chat, svc, "service-sam", task["id"])
+        done = db.execute("SELECT * FROM room_tasks WHERE id=?", (task["id"],)).fetchone()
+        self.assertEqual((done["status"], done["done_by"]), ("done", "service-sam"))
+        self.assertIn("Recorded", chat.bot_posts("room-service")[-1]["message"])
+        kinds = [(e["kind"], e["actor"]) for e in db.execute("SELECT * FROM events WHERE case_id=?", (case["id"],))]
+        self.assertIn(("service", "service-sam"), kinds)
+
+    def test_only_room_service_can_close_a_task_and_only_once(self):
+        chat, roles, db, svc = make_env()
+        self.say_done(chat, svc, "nurse-ana", "T-102-3")
+        self.say_done(chat, svc, "patient-101", "T-102-3", room="patient-101")
+        self.assertEqual(db.execute("SELECT status FROM room_tasks WHERE id='T-102-3'").fetchone()["status"], "open")
+        self.assertEqual(db.execute("SELECT outcome FROM audit WHERE action='DONE'").fetchone()["outcome"], "rejected")
+        self.say_done(chat, svc, "service-rita", "T-102-3")
+        self.say_done(chat, svc, "service-sam", "T-102-3")          # a second close does nothing
+        self.assertEqual(db.execute("SELECT done_by FROM room_tasks WHERE id='T-102-3'").fetchone()["done_by"], "service-rita")
+        self.say_done(chat, svc, "service-sam", "T-999-9")
+        self.assertIn("No task", chat.bot_posts("room-service")[-1]["message"])
+
+    def test_service_events_are_staff_only(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        decide(chat, svc, confirm(chat, svc, case))
+        from lantern import timeline
+        self.assertIn("ROOM SERVICE", timeline.render(db, svc, "101", "nurse"))
+        self.assertNotIn("ROOM SERVICE", timeline.render(db, svc, "101", "patient"))
+
+    def test_jira_task_for_a_tray_change_uses_the_fake_http_layer(self):
+        calls = []
+        jira = Jira("https://x.example", "a@b.c", "tok", "LAN", http=lambda m, u, b=None, h=None: calls.append((m, u, b)) or {"key": "LAN-7"})
+        chat, roles, db, svc = make_env()
+        svc.integrations = [jira]
+        _, case = open_case(chat, svc)
+        decide(chat, svc, confirm(chat, svc, case))
+        summaries = [c[2]["fields"]["summary"] for c in calls if c[1].endswith("/issue") and c[0] == "POST"]
+        self.assertTrue(any(s.startswith("Room service 4W-101") for s in summaries))
+
+
+class TestWholeWardExtras(unittest.TestCase):
+    def nurse(self, chat, svc, text, user="nurse-ana"):
+        svc.handle(chat.say(user, "nurse-station", text))
+
+    def test_discharge_opens_a_turnover_checklist_for_room_service(self):
+        chat, roles, db, svc = make_env()
+        self.nurse(chat, svc, "DISCHARGE 103")
+        ids = [r["id"] for r in db.execute("SELECT id FROM room_tasks WHERE id LIKE 'T-103-X1-%' ORDER BY id")]
+        self.assertEqual(len(ids), 5)
+        feed = chat.bot_posts("room-service")[-1]["message"]
+        self.assertIn("Patient 103 discharged", feed)
+        self.assertIn("DONE", feed)
+        svc.handle(chat.say("service-sam", "room-service", f"DONE {ids[0]}"))
+        self.assertEqual(db.execute("SELECT status FROM room_tasks WHERE id=?", (ids[0],)).fetchone()[0], "done")
+        self.nurse(chat, svc, "DISCHARGE 103")                       # a second discharge is a new numbered checklist
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM room_tasks WHERE id LIKE 'T-103-X2-%'").fetchone()[0], 5)
+
+    def test_only_nurses_can_start_a_discharge_and_unknown_patients_are_refused(self):
+        chat, roles, db, svc = make_env()
+        svc.handle(chat.say("service-sam", "nurse-station", "DISCHARGE 103"))
+        self.nurse(chat, svc, "DISCHARGE 999")
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM room_tasks WHERE id LIKE 'T-103-X%'").fetchone()[0], 0)
+        self.assertEqual(db.execute("SELECT outcome FROM audit WHERE action='DISCHARGE'").fetchone()[0], "rejected")
+
+    def test_ready_answers_from_the_task_list_and_precautions(self):
+        chat, roles, db, svc = make_env()
+        self.nurse(chat, svc, "READY 4W-102")
+        said = chat.bot_posts("nurse-station")[-1]["message"]
+        self.assertIn("NOT ready", said)
+        self.assertIn("T-102-3", said)
+        self.assertIn("contact precautions", said)
+        self.nurse(chat, svc, "READY 4W-103")
+        self.assertIn("is READY", chat.bot_posts("nurse-station")[-1]["message"])
+
+    def test_overdue_reminder_posts_once_per_task_and_is_off_without_a_threshold(self):
+        import time
+        chat, roles, db, svc = make_env()
+        self.assertEqual(svc.remind_overdue(), 0)                    # unset means off
+        svc.now = lambda: time.time() + 3 * 3600
+        n = svc.remind_overdue(minutes=120)
+        self.assertEqual(n, db.execute("SELECT COUNT(*) FROM room_tasks WHERE status='open'").fetchone()[0])
+        before = len(chat.bot_posts("room-service"))
+        svc.remind_overdue(minutes=120)                              # keyed: no repeat
+        self.assertEqual(len(chat.bot_posts("room-service")), before)
+
+    def test_second_entry_for_the_same_medicine_is_flagged_not_blocked(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        for t in ("18:10", "18:40"):
+            svc.handle(chat.say("nurse-ana", "nurse-station", f"GIVEN Case {case['id']} anti-nausea (fictional) {t}", case["nurse_root"]))
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM meds").fetchone()[0], 2)          # both kept
+        warns = [p["message"] for p in chat.bot_posts("medication") if "Possible double entry" in p["message"]]
+        self.assertEqual(len(warns), 1)
+
+    def test_api_exposes_room_readiness(self):
+        chat, roles, db, svc = make_env()
+        from lantern import api
+        import json as _json
+        _, _, body = api.route(svc, "/api/rooms", {})
+        rooms = {r["room"]: r for r in _json.loads(body)}
+        self.assertFalse(rooms["4W-102"]["ready"])
+        self.assertTrue(rooms["4W-103"]["ready"])
+        self.assertIn("T-102-3", rooms["4W-102"]["open_tasks"])
+
+
+class TestDictatedAdvice(unittest.TestCase):
+    def say(self, chat, svc, user, text, root, room="doctor-review"):
+        svc.handle(chat.say(user, room, text, root))
+
+    def setup_case(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        return chat, db, svc, confirm(chat, svc, case)
+
+    def test_advice_is_recorded_as_advice_and_drafts_a_decide_without_applying_it(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: She can have a regular diet today, her procedure moved to Thursday.", case["doctor_root"])
+        self.assertEqual(svc.chart("101")["chart_version"], 3)                       # nothing changed
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM decisions").fetchone()[0], 0)
+        kinds = [e["kind"] for e in db.execute("SELECT kind FROM events WHERE case_id=?", (case["id"],))]
+        self.assertIn("advice", kinds)
+        said = chat.bot_posts("doctor-review")[-1]["message"]
+        self.assertIn("not a decision", said)
+        self.assertIn("@care-coordinator", said)
+        self.assertIn(f"DECIDE Case {case['id']} v3 diet=regular", said)
+        self.assertEqual(svc.case(case["id"])["state"], CONFIRMED)
+
+    def test_the_doctor_still_has_to_send_the_decide_herself(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: regular diet today", case["doctor_root"])
+        self.say(chat, svc, "care-coordinator", f"DECIDE Case {case['id']} v3 diet=regular\nEXPLAIN: agent draft", case["doctor_root"])
+        self.assertEqual(svc.chart("101")["chart_version"], 3)                       # an agent's DECIDE counts for nothing
+        decide(chat, svc, case)
+        self.assertEqual(svc.chart("101")["chart_version"], 4)
+
+    def test_only_a_doctor_in_the_case_thread_can_record_advice(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "nurse-ana", f"ADVICE Case {case['id']}: regular diet", case["doctor_root"])
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: regular diet", "")      # top-level, not the case thread
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM events WHERE kind='advice'").fetchone()[0], 0)
+        outcomes = [r[0] for r in db.execute("SELECT outcome FROM audit WHERE action='ADVICE'")]
+        self.assertEqual(outcomes, ["rejected", "rejected"])
+
+    def test_no_draft_when_the_words_name_no_change(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: Let's talk to the family first.", case["doctor_root"])
+        said = chat.bot_posts("doctor-review")[-1]["message"]
+        self.assertIn("no draft", said)
+        self.assertNotIn("```", said)
+
+    def test_advice_is_staff_only_on_the_timeline(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: regular diet today", case["doctor_root"])
+        from lantern import timeline
+        self.assertIn("DOCTOR ADVICE (dictated)", timeline.render(db, svc, "101", "doctor"))
+        self.assertNotIn("DOCTOR ADVICE", timeline.render(db, svc, "101", "patient"))
+
+    def test_replaying_the_same_advice_post_does_not_duplicate_the_reply(self):
+        chat, db, svc, case = self.setup_case()
+        post = chat.say("dr-lee", "doctor-review", f"ADVICE Case {case['id']}: regular diet today", case["doctor_root"])
+        svc.handle(post)
+        svc.handle(post)
+        self.assertEqual(len([p for p in chat.bot_posts("doctor-review") if "Advice recorded" in p["message"]]), 1)
+
+
+class TestVoiceReminders(unittest.TestCase):
+    def setUp(self):
+        import time as _t
+        self.time = _t
+        self.chat, self.roles, self.db, self.svc = make_env()
+        _, self.case = open_case(self.chat, self.svc)
+        self.case = confirm(self.chat, self.svc, self.case)
+
+    def remind(self, text, user="nurse-ana", room="nurse-station", root=None):
+        root = self.case["nurse_root"] if root is None else root
+        self.svc.handle(self.chat.say(user, room, f"REMIND Case {self.case['id']} {text}", root))
+
+    def test_a_nurse_sets_a_reminder_that_is_posted_back_once_when_due(self):
+        self.remind("in 20 min check she ate without nausea")
+        r = self.db.execute("SELECT * FROM reminders").fetchone()
+        self.assertEqual(r["status"], "open")
+        ack = self.chat.bot_posts("nurse-station")[-1]["message"]
+        self.assertIn("Reminder set for", ack)
+        self.assertIn("@care-coordinator", ack)
+        self.assertEqual(self.svc.fire_reminders(), 0)                       # not due yet
+        self.svc.now = lambda: self.time.time() + 25 * 60
+        self.assertEqual(self.svc.fire_reminders(), 1)
+        self.assertEqual(self.svc.fire_reminders(), 0)                       # once only
+        due = [p["message"] for p in self.chat.bot_posts("nurse-station") if p["message"].startswith("Reminder due")]
+        self.assertEqual(len(due), 1)
+        self.assertIn("check she ate", due[0])
+        self.assertIn("reminder", [e["kind"] for e in self.db.execute("SELECT kind FROM events")])
+
+    def test_times_of_day_are_understood(self):
+        for text in ("11:00 a", "9am b", "2:30 pm c"):
+            self.remind(text)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM reminders").fetchone()[0], 3)
+        hours = sorted({self.time.localtime(r["due_ts"]).tm_hour for r in self.db.execute("SELECT due_ts FROM reminders")})
+        self.assertEqual(hours, [9, 11, 14])
+
+    def test_only_staff_in_the_case_thread_with_a_real_time_can_set_one(self):
+        self.remind("in 5 min x", user="service-sam")
+        self.remind("in 5 min x", root="")                                    # not the case thread
+        self.remind("whenever x")                                             # no time
+        self.remind("27:99 x")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM reminders").fetchone()[0], 0)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM audit WHERE action='REMIND' AND outcome='rejected'").fetchone()[0], 3)
+
+    def test_the_calendar_hook_creates_one_event_per_reminder(self):
+        calls = []
+        cal = GoogleCalendar("tok", "care", http=lambda m, u, b=None, h=None: calls.append((m, u, b)) or {"id": "ev1"})
+        self.svc.integrations = [cal]
+        self.remind("in 10 min check she ate")
+        self.assertEqual(len([c for c in calls if "calendar" in c[1]]), 1)
+        self.assertIn("check she ate", calls[0][2]["summary"])
+
+    def test_the_care_coordinator_stand_in_adds_it_to_the_calendar_ledger_once(self):
+        from lantern.chat import Post
+        from lantern.simagents import CoordinatorAgent, ServiceTools
+        self.remind("in 10 min check she ate")
+        ack = next(p for p in self.chat.bot_posts("nurse-station") if p["message"].startswith("Reminder set for"))
+        post = Post(ack["id"], "nurse-station", "uid-record-bot", ack["message"], ack["root_id"])
+
+        class C:
+            sent = []
+
+            def post(self, room, message, root_id="", props=None):
+                self.sent.append(message)
+        n = str(self.case["id"])
+        agent = CoordinatorAgent(C(), ServiceTools(self.svc), {n: {"calendar": {"ref": "11:00", "summary": "Follow-up event"}}})
+        agent.handle(post)
+        agent.handle(post)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM tracking WHERE system='calendar'").fetchone()[0], 1)

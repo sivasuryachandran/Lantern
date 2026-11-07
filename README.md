@@ -1,26 +1,62 @@
 # Lantern
 
-**What was said. What was confirmed. Who owns what's next.**
+**No concern left in the dark. What was said, what was confirmed, who owns what's next.**
 
 > **Fictional data. Not for clinical use.** Every person and record here is invented. Lantern gives no medical advice, is not HIPAA-compliant, and is not an EHR. The "chart" is a small *simulated chart* inside Lantern.
 
-Lantern keeps a shared record of concerns, decisions and handoffs beside the clinical chart. When what a patient says conflicts with their chart, the concern moves through Switch rooms from the patient to the nurse to the doctor, and comes back to the patient as an answer a clinician confirmed. The next nurse then has to accept the follow-up at shift change.
+Built for the Flip the Switch hackathon (WeMakeDevs × DevTools Academy × Switch).
 
-The rule underneath: **only a clinician's verified decision changes the record.**
+Every morning at seven a nurse hands her patients to someone new, and that is when things get lost: nobody can see who owns what's next. Lantern is a ward built on Switch. Patients talk to a bedside tablet. AI agents notice a mismatch between what a patient says and what the chart says, and carry it to the nurse and the doctor. **Only a verified doctor's decision changes the record**, and nothing changes hands until the incoming nurse accepts.
 
-## How Switch is used (and what breaks without it)
+## Links
 
-- **Nothing carries the case between rooms.** care-coordinator, a real coding agent in a Switch room, summarizes the evidence in `doctor-review` and answers the doctor from the live chart. Without Switch there is no teammate in that room.
-- **Nothing stops an agent joining a patient room.** Isolation is Switch room membership and addressing rules, not a prompt: no agent is a member of any patient room, each agent's "Who can talk to your agent" lists only its staff rooms (so `@intake` from a patient in Mattermost's Town Square is refused by Switch), and patient 102's account cannot open patient 101's.
-- **Nothing makes the agent accountable.** care-coordinator gets chart facts only from a lookup tool (`GET /chart/<patient>/<entry>`) that is plain code: every call is logged with a lookup number, entry, chart version, time and agent. When it cites `[proc-1 v3 · lookup #31 = Thu 9:00]`, record-bot replies in the thread with a card built from the log, not from the agent's words, marked ✓ verified or ⚠ (no matching lookup, wrong value, wrong entry/version/agent/patient, or stale after the chart changed). Only cited source facts are checked; anything else the agent writes is shown as unverified interpretation.
+| What | Link |
+| --- | --- |
+| Demo video | https://youtu.be/QR7r84tyBlo |
+| Blog on Hashnode | https://sivasuryachandran.hashnode.dev/the-nurse-was-right-we-refused-her-anyway |
+| Blog on dev.to | https://dev.to/siva_surya_f555745c8bbca8/the-nurse-and-doctor-sent-the-same-message-only-one-changed-the-chart-3ad0 |
+| #HowISwitch post on X | https://x.com/siva_surya35077/status/2119108582230896946 |
+| Code | https://github.com/sivasuryachandran/Lantern |
 
-### Who does what
+## Watch the demo
 
-- **Agents do the teamwork, through Switch.** intake asks the nurse; care-coordinator briefs the doctor and the incoming nurse. They are members of the staff rooms and reply in the same threads as the people.
-- **Code handles the patient edge and the checks.** record-bot forwards patient messages, starts the case threads, sends the fixed patient templates and the doctor's own words, and posts short verdicts (a ✓ or ⚠ under an agent's cited facts). It uses no model and makes no judgments.
-- **Evidence receipts are how a good teammate works, not distrust.** Every claim the agent makes comes with its source, the way a good colleague's would; the system just shows that the source says what the claim says.
+**YouTube: https://youtu.be/QR7r84tyBlo**
 
-## Rooms
+[`recordings/final/lantern_demo_3min.mp4`](recordings/final/lantern_demo_3min.mp4) (2:52, captions in `.srt`). Chapters: [`chapters.txt`](recordings/final/chapters.txt). Every cut, speed change and insert: [`cutlist.md`](recordings/final/cutlist.md). What was and was not recorded: [`shotlist_actual.md`](recordings/final/shotlist_actual.md).
+
+How honest the video is:
+
+- All record-service posts, ✓ checks, refusals, chart changes and ownership changes are from one real run.
+- Human roles (patients, nurses, Dr. Lee, room service) were played by our team's script.
+- **The agent steps in the recording are the scripted stand-in agents** (`lantern/simagents.py`), captioned "stand-in mode (tests)". The two Switch Console agents were not answering Mattermost messages at recording time.
+- The Wispr Flow bubbles are labelled re-enactments: the driver typed those commands.
+- The Calendar and Jira inserts are screenshots of the real services, cropped to the events and the board.
+- The first seconds use AI-generated concept footage, labelled as such.
+
+## How it works
+
+Three kinds of actor, each with one job:
+
+| Actor | What it does | What it can never do |
+| --- | --- | --- |
+| **Agents** (Switch): `intake`, `care-coordinator`, plus `interpreter` and `scribe` | notice, quote, summarise with cited chart facts, translate, file notes | join a patient room, change the chart, say "resolved" |
+| **record-bot** (plain code) | forwards patient messages, opens cases, posts ✓/⚠ checks from its own log, sends fixed patient templates and the doctor's own words | accept free-text from a patient as a command |
+| **People** | confirm, decide, hand off, accept | decide outside their role |
+
+The deterministic **record service** ([`lantern/service.py`](lantern/service.py)) is the only thing that changes the simulated chart. It matches on Mattermost `user_id`s resolved from [`config/roles.yaml`](config/roles.yaml), never on display names.
+
+### The ward: nine private rooms
+
+| Room | Who is in it | Purpose |
+| --- | --- | --- |
+| `patient-101` … `patient-104` | that patient, record-bot | bedside tablet. **No agent is ever a member** |
+| `nurse-station` | nurses, intake, care-coordinator, record-bot | flag, confirm, hand off |
+| `doctor-review` | Dr. Lee, Nurse Ana, care-coordinator, record-bot | evidence with receipts, then the decision |
+| `orders` | doctor, nurses, record-bot | write-only feed of every chart change |
+| `medication` | nurses, doctor, record-bot | write-only feed of every `GIVEN` |
+| `room-service` | Sam and Rita, nurses, record-bot | tray and turnover tasks, closed with `DONE <id>` by room service only |
+
+### How the rooms connect
 
 ```mermaid
 flowchart LR
@@ -44,110 +80,77 @@ flowchart LR
 
 record-bot is plain code and is in every room. No agent is in a patient room.
 
-## Case 17 in one minute
+### Case 17 in one minute
 
-1. Patient 101's bedside tablet (`patient-101`): "Can't wait for breakfast. Dr. Lee said it's fine now that my procedure moved." The chart says `diet = NPO` (v3).
-2. record-bot forwards it to `nurse-station`. **intake** (a Switch agent) posts a *possible* discrepancy card quoting the patient exactly. The service checks the quote against the original post, opens Case 17, and only then tells the patient "Your care team is checking this."
-3. The nurse replies `CONFIRM Case 17` in the thread. record-bot opens the Case thread in `doctor-review`; **care-coordinator** (a Switch agent) summarizes the evidence from the chart with citations.
-4. Dr. Lee replies `DECIDE Case 17 v3 diet=regular` plus `EXPLAIN: ...`. The service verifies author, role, room, thread, edit status and chart version, bumps the simulated chart to v4, and posts her words to the patient word for word, with "Following up: nurse-ana".
-5. At shift change the outgoing nurse posts `GIVEN` and `HANDOFF`; the incoming nurse posts `ACCEPT`; the patient's owner line becomes "Following up: nurse-ben".
+1. Patient 101 on the tablet: "Can't wait for breakfast. Dr. Lee said it's fine now." The chart says `diet = NPO` (v3).
+2. record-bot forwards it to `nurse-station`. **intake** posts a *possible* discrepancy quoting the patient word for word. The service checks the quote is an exact substring of the original post and opens Case 17.
+3. The nurse replies `CONFIRM Case 17`. record-bot opens the thread in `doctor-review`; **care-coordinator** summarises the chart facts, and each cited fact gets a ✓ receipt from the lookup log. The ✓ means "matches the logged lookup", not "medically right".
+4. A nurse who tries `DECIDE` is refused by code. Dr. Lee's `DECIDE Case 17 v3 diet=regular` plus `EXPLAIN:` is verified (author, role, room, thread, unedited, current version), the chart moves v3 → v4, and the patient receives Dr. Lee's own words.
+5. The decision opens a tray task in `room-service`; only room service can close it.
+6. At shift change the owner posts `HANDOFF`, the coordinator briefs the incoming nurse, and ownership moves only on `ACCEPT`.
 
-Run it with no Mattermost at all:
+### Commands
 
-```bash
-.venv/bin/python scripts/demo_offline.py
-```
+`CONFIRM`, `REJECT`, `DECIDE … EXPLAIN:`, `GIVEN`, `HANDOFF`, `ACCEPT`, `ADVICE` (dictated doctor advice, recorded as advice with a draft `DECIDE`), `NOTE` (dictated note, never an order), `REMIND`, `DONE`, `DISCHARGE`, `READY`, `TIMELINE`. They are designed to be spoken with Wispr Flow; see [docs/WISPR.md](docs/WISPR.md).
 
-## Trust model
+### Trust model
 
-Agents extract and route. A small deterministic **record service** (`lantern/service.py`) is the only thing that changes the simulated chart, says "resolved", or posts to a patient.
+- A claim is rejected unless its `quote` is an exact substring of the patient's post, it names an active order of that topic, and it cites the current chart version.
+- A decision counts only from a user listed as `doctor`, in `doctor-review`, as an unedited reply in that case's thread, naming the current chart version, on a nurse-confirmed case.
+- Everything a patient sees from the service is a fixed template, the doctor's own words, or a translation labelled as one.
+- Isolation is room membership and addressing rules, not a prompt: each agent's "Who can talk to your agent" lists only its staff rooms, so `@intake` from a patient in Mattermost's Town Square is refused by Switch.
+- Every side effect is keyed and idempotent: a restart creates no duplicate case or message.
 
-- A claim card is rejected unless its `quote` is an **exact substring** of the original patient post, it names an active order of that topic, and it cites the current chart version. Status can only be `possible_discrepancy`.
-- A decision counts only if it is a post by a user listed as `doctor` in `config/roles.yaml`, in `doctor-review`, as a reply in that case's doctor thread, unedited, in the `DECIDE` format, naming the current chart version, on a nurse-confirmed case. Otherwise it is ignored or rejected with a message.
-- Everything a patient can ever see from the service is a fixed template (`PATIENT_TEMPLATES`) or a doctor's own words.
-- The service matches on Mattermost `user_id`s resolved from `roles.yaml` at startup, never on display names.
-- Every side effect is keyed and idempotent: restarting creates no duplicate case, thread root or patient message.
-
-The record keeps *said*, *chart*, *draft*, *decision* and *task* entries separate. `GIVEN` entries are stored apart from orders and never change them.
-
-## Setup
+## Run it
 
 Python 3.11+ and PyYAML.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install pyyaml
-.venv/bin/python -m unittest discover -s tests        # the must-pass tests, no network needed
+.venv/bin/python -m unittest discover -s tests          # 98 tests, no network
+.venv/bin/python scripts/demo_offline.py                # the whole case with no Mattermost
 ```
 
 On Windows use `.venv/Scripts/python` and Git Bash for `scripts/start.sh`.
 
-With Switch and its bundled Mattermost running, follow [docs/SWITCH_SETUP.md](docs/SWITCH_SETUP.md): create the two agents (instructions in `docs/agents/`), restrict who can address them, run `scripts/setup_mattermost.py`, then `scripts/start.sh` (or `python -m lantern run`). Mattermost's port is chosen by Switch Console, so set `MM_URL` and `MM_TEAM` to match.
+With Switch and its bundled Mattermost running, follow [docs/SWITCH_SETUP.md](docs/SWITCH_SETUP.md): create the agents (instructions in [`docs/agents/`](docs/agents)), restrict who can address them, run `scripts/setup_mattermost.py`, then the commands below. Mattermost's port is chosen by Switch Console, so set `MM_URL` and `MM_TEAM` to match.
 
 ```bash
-.venv/bin/python -m lantern timeline 101 patient   # or nurse / doctor
-.venv/bin/python -m lantern chart 101
+export MM_URL=http://localhost:8065 MM_TEAM=lantern LANTERN_TEST_PASSWORD=...   # throwaway test password
+scripts/start.sh                                         # record service, dashboard on :8099
+.venv/bin/python -m lantern simagents                    # stand-in agents, if the Switch agents are not running
+.venv/bin/python scripts/ward_scenarios.py               # a day on the ward, played by scripted humans
 ```
 
-## Tests
+The **mission-control dashboard** at `http://127.0.0.1:8099/` is read-only and polls every two seconds: patients and orders, the case pipeline, evidence ledger, simulated chart versions, medicines, room tasks, translations, reminders, tracking items and the command audit. `/api/report?format=html` is the shift record.
 
-`tests/test_must_pass.py` covers the plan's seven must-pass tests plus case numbering and reject/handoff edge cases (24 tests); `tests/test_extras.py` adds evidence receipts, the lookup endpoints, buttons, the clip and the timeline views (26 more, 50 in total). Test 1's "three casual mentions" is checked at the service level (each card opens a possible, never confirmed, case); whether the *LLM* produces the card for each phrasing is checked live with `scripts/check_intake.py`.
+## Integrations
+
+- **Jira and Google Calendar:** the care-coordinator creates a task and a calendar event per follow-up. In our demo workspace these exist for real (KAN board, three `[Lantern]` events). Direct service hooks (`lantern/integrations.py`) are unit-tested against fakes only.
+- **Wispr Flow:** voice input for commands and notes. Dictation was not recorded in the demo.
+- **Translation:** patient 103 writes Spanish; the interpreter translates both ways and can read aloud (macOS voice).
+
+## Status, plainly
+
+- **Tested:** 98 unit tests (`tests/`), no network; the offline demo; live runs against a local Mattermost with stand-in agents (`scripts/live_e2e.py`, `scripts/ward_scenarios.py`).
+- **Switch agents:** `intake` and `care-coordinator` were run live in Switch Console on Nov 4 (full Case 17 passed three runs in a row, refusals checked live). The Console agents have since been re-created on OpenCode and, at recording time, did not receive Mattermost messages, so the recorded run uses stand-ins. `interpreter` and `scribe` exist only as code stand-ins.
+- **Isolation, from the live Switch run:** patient-102's account gets 403 reading patient-101. No agent is a member of either patient room (checked against Mattermost membership). Switch's own refusal of an agent in a patient room was not tested: its Console does not list rooms an agent is not in. Both agents were also in Mattermost's default Town Square, where the patient accounts are members and Mattermost cannot remove anyone. Each agent's "Who can talk to your agent" is therefore set to custom rules (users any, agents none, rooms nurse-station for intake, nurse-station and doctor-review for care-coordinator). `@intake` from patient-101 in Town Square then got: "You're not permitted to direct messages to me in this room — my operator has restricted who can address me here." Case 17 passed again with these rules on.
+- **Not done:** the nurse review (questions prepared in [docs/NURSE_REVIEW.md](docs/NURSE_REVIEW.md); no clinician feedback exists), live Mattermost buttons, and live calls from the service's own Jira/Calendar hooks.
+- **Known limit:** a crash in the middle of a command can drop that command's follow-up message; restarts never duplicate anything.
 
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `lantern/service.py` | Record service: SQLite, chart versions, case states, decision verification |
-| `lantern/bot.py`, `lantern/chat.py` | record-bot poller and the Mattermost REST client (stdlib only) |
-| `lantern/timeline.py` | Role-scoped shared timeline |
-| `config/roles.yaml`, `data/` | Roles, room membership, synthetic charts |
-| `docs/agents/` | Switch agent instructions |
-| `scripts/` | Mattermost setup, offline demo, live intake check |
+| `lantern/service.py` | record service: SQLite, chart versions, cases, decision verification, room tasks |
+| `lantern/bot.py`, `lantern/chat.py` | record-bot poller and Mattermost REST client (stdlib only) |
+| `lantern/simagents.py` | rule-based stand-in agents (tests and fallback) |
+| `lantern/api.py`, `lantern/ui.html` | read-only API and the dashboard |
+| `config/roles.yaml`, `data/` | roles, room membership, synthetic charts |
+| `scripts/` | Mattermost setup, offline demo, live checks, ward scenarios, reset |
+| `docs/` | setup, agent instructions, scenarios, demo scripts, blog and #HowISwitch drafts |
+| `site/` | the project website |
+| `film/`, `demo-video/` | concept film and the card/voice kit |
+| `recordings/final/` | the submission video, captions, chapters, cut list |
 
-## Database and backend
-
-SQLite (`lantern.db`) holds the simulated charts (every version), cases, events, decisions, lookups and the audit log. `python scripts/seed_demo_db.py` loads four fictional patients and three earlier cases (14 to 16), so the first live case is still Case 17; `scripts/start.sh` does this automatically for a new database.
-
-**Mission-control dashboard:** with the bot running, open `http://127.0.0.1:8099/` (add `?key=<LANTERN_API_KEY>` if you set one). It shows the case pipeline lighting up stage by stage, the simulated chart with version history (old orders struck through), the evidence ledger (✓ current / ⚠ stale), the case timeline and the command audit with refusals in red. It polls the read-only API every 1.5 seconds; press **P** for presentation mode.
-
-`python -m lantern run` also serves a **read-only** backend on `127.0.0.1:8099` (set `LANTERN_BIND` to change, `LANTERN_API_KEY` to require an `X-Api-Key` header): `/healthz`, `/api/patients`, `/api/patients/<id>/chart` and `/chart/versions`, `/api/cases` and `/api/cases/<n>`, `/api/lookups`, `/api/audit`, and `/api/timeline/<id>?role=nurse|doctor[&format=html]`. Nothing in the API can change the record, and it refuses the patient role. Only patients 101 and 102 have chat accounts; 103 and 104 exist as backend data only.
-
-## Optional pieces
-
-All are off unless configured.
-
-| Piece | How to enable | Notes |
-| --- | --- | --- |
-| Buttons (Confirm / Reject / Accept) | `LANTERN_ACTION_URL=http://<host reachable from Mattermost>:8099/action` | A click becomes the same typed command with Mattermost's verified `user_id`, so every check still applies. Mattermost must allow that host in `AllowedUntrustedInternalConnections`. The doctor's `DECIDE` stays typed because it carries her own words. |
-| Jira | `JIRA_URL`, `JIRA_EMAIL`, `JIRA_TOKEN`, `JIRA_PROJECT`, optional `JIRA_ACCOUNTS='{"nurse-ben":"<accountId>"}'` | One task per case on RESOLVED; reassigned on ACCEPT. Use a test project. |
-| Google Calendar | `GCAL_TOKEN` (OAuth bearer), optional `GCAL_CALENDAR_ID` | One follow-up event on RESOLVED. Use a test calendar. |
-| Recorded clip | `python -m lantern clip 101 data/clip-example.json` | Takes a timestamped transcript (from any transcriber); claims cite `clip@seconds`. No audio playback or transcription is built in. |
-
-Calendar and Jira are called directly by the record service rather than as Switch agent tools; neither is the record and neither approves anything.
-
-## Verification status
-
-- `python -m unittest discover -s tests`: 51 tests, no network.
-- `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
-- **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
-  - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
-  - Full Case 17 (patient, intake card, nurse CONFIRM, care-coordinator summary with ✓ evidence cards, doctor DECIDE, chart v3 to v4, patient told) passed three runs in a row on a fresh database.
-  - Refused live: DECIDE from a nurse, from a patient, as a top-level post, and with a stale chart version. Other refusals (edited post, another case's thread) are covered by unit tests only.
-  - GIVEN, HANDOFF and ACCEPT moved ownership from nurse-ana to nurse-ben, with a care-coordinator brief.
-  - patient-102's account gets 403 reading patient-101. No agent is a member of either patient room (checked against Mattermost membership). Switch's own refusal of an agent in a patient room was not tested: its Console does not list rooms an agent is not in.
-  - Both agents were also in Mattermost's default Town Square, where the patient accounts are members and Mattermost cannot remove anyone. Each agent's "Who can talk to your agent" is therefore set to custom rules (users any, agents none, rooms nurse-station for intake, nurse-station and doctor-review for care-coordinator). `@intake` from patient-101 in Town Square then got: "You're not permitted to direct messages to me in this room — my operator has restricted who can address me here." Case 17 passed again with these rules on.
-- Not yet run: live buttons, and live Jira/Calendar calls (request shapes are unit-tested against a fake HTTP layer only).
-- Known limit: a crash in the middle of a command can drop that command's follow-up message; restarts never duplicate anything.
-- `scripts/demo_driver.py` and `scripts/live_e2e.py`, run again on Nov 6 against a local Mattermost with the full loop, the dashboard and the lookup tool; both the intake and care-coordinator accounts were scripted stand-ins in that run.
-- Not done: the nurse review. See below.
-
-## Nurse review
-
-We prepared the questions for a 15-minute review by a working nurse ([docs/NURSE_REVIEW.md](docs/NURSE_REVIEW.md)), but **the review was not done before submission**, so there is no clinician feedback or quote here. The workflow, wording and roles are our own assumptions and have not been validated by a nurse or doctor. Everything is fictional data, not for clinical use.
-
-## Docs
-
-[Recording guide](docs/RECORDING_GUIDE.md) · [Demo script](docs/DEMO_SCRIPT.md) · [Nurse review questions](docs/NURSE_REVIEW.md) · [Blog draft](docs/BLOG.md) · [#HowISwitch draft](docs/HOWISWITCH.md) · [Submission checklist](docs/SUBMISSION.md) · `scripts/start.sh` starts record-bot against the local Mattermost.
-
-A nurse or doctor can post `TIMELINE 101` in nurse-station or doctor-review to get the role-scoped timeline from record-bot; `python -m lantern timeline 101 nurse --html > timeline.html` makes a standalone page for the last demo scene.
-
-Team split and the Claude Code handoff: [docs/TEAM_SPLIT.md](docs/TEAM_SPLIT.md), [docs/HANDOFF_FOR_CLAUDE_CODE.md](docs/HANDOFF_FOR_CLAUDE_CODE.md).
+More: [Hospital scenarios](docs/HOSPITAL_SCENARIOS.md) · [Recording guide](docs/RECORDING_GUIDE.md) · [Submission checklist](docs/SUBMISSION.md) · [Blog draft](docs/BLOG.md) · [#HowISwitch draft](docs/HOWISWITCH.md)

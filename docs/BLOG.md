@@ -23,3 +23,7 @@ The pattern isn't medical: *only a verified owner can change shared state, and a
 ## What it is not
 
 Not an AI medical record, not clinical software, not HIPAA-ready. It is a workflow demo with fictional data.
+
+## Voice is how a ward talks
+
+[Write after the Wispr set-up is done: why we built Lantern by voice, and for voice. Mention Privacy Mode, and only claim what you actually dictated. See docs/WISPR.md.]

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technical flow · Lantern</title>
+<meta name="description" content="How Lantern works under the hood: components, message flow, validation rules, command grammar, database, API and tests.">
+<meta name="theme-color" content="#0A101C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 48'%3E%3Cpath d='M8 12h14l2 22H6z' fill='%23F5B544'/%3E%3Cpath d='M8 12l7-6 7 6' fill='none' stroke='%23F5B544' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+<div class="wrap">
+  <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
+  <nav class="nav-links" id="navlinks" aria-label="Main">
+    <a href="how-it-works.html">How it works</a>
+    <a href="features.html">Features</a>
+    <a href="built-on-switch.html">Built on Switch</a>
+    <a href="cases.html">Cases</a>
+    <a href="technical.html" aria-current="page">Technical</a>
+    <a href="about.html">About</a>
+    <a href="index.html#film">Film</a>
+    <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <span class="badge">Fictional data · not for clinical use</span>
+    <a class="gh" href="https://github.com/sivasuryachandran/Lantern" aria-label="Lantern on GitHub"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.200 1.900.9 2.300.7.1-.5.3-.9.5-1.100-1.800-.2-3.600-.9-3.600-4 0-.9.3-1.600.8-2.100-.1-.2-.4-1 .1-2.100 0 0 .7-.2 2.200.8a7.500 7.500 0 0 1 4 0c1.500-1 2.200-.8 2.200-.8.4 1.100.2 1.900.1 2.100.5.6.8 1.300.8 2.100 0 3.100-1.900 3.800-3.600 4 .3.3.6.8.6 1.500v2.200c0 .2.1.5.6.4A8 8 0 0 0 8 0z"/></svg>GitHub</a>
+  </div>
+  <button class="menu-btn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+</div>
+<div class="m-strip"><span class="badge">Fictional data · not for clinical use</span></div>
+</header>
+
+<main id="main">
+<section class="page-hero"><div class="wrap">
+  <p class="eyebrow">Technical flow</p>
+  <h1>Agents route. Code decides.</h1>
+  <p class="lead">A deterministic record service sits between Mattermost and the chart. It uses no model. Everything it does is checked, logged and safe to replay.</p>
+</div></section>
+
+<section style="padding-top:8px" aria-labelledby="arch">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Architecture</p><h2 id="arch">Nine rooms, two named agents, one record service.</h2></div>
+    <div class="arch reveal" role="img" aria-label="Architecture: people and two named AI agents meet in nine Switch rooms; record-bot and the record service sit underneath with SQLite, the lookup tool, room tasks and a read-only API">
+      <div class="lane"><h4>Who is in the ward</h4>
+        <div class="row3">
+          <div class="node agent"><b>AI agents</b><span>intake · care-coordinator. Staff rooms only, never a patient room</span></div>
+          <div class="node "><b>Care team</b><span>Nurse Ana · Nurse Ben · Dr. Lee · Sam and Rita (room service)</span></div>
+          <div class="node locked"><b>Patients</b><span>101 to 104, each in a private room with no agents</span></div>
+        </div></div>
+      <div class="join" aria-hidden="true">Switch: rooms · threads · roles · addressing</div>
+      <div class="lane"><h4>Switch + Mattermost: nine private rooms</h4>
+        <div class="row3">
+          <div class="node locked"><b>patient-101 to patient-104</b><span>bedside tablets · record-bot only</span></div>
+          <div class="node agent"><b>nurse-station · doctor-review</b><span>intake, care-coordinator, nurses, Dr. Lee</span></div>
+          <div class="node store"><b>orders · medication · room-service</b><span>write-only feeds, plus room-service tasks</span></div>
+        </div></div>
+      <div class="join" aria-hidden="true">REST · polling every 1.5 s</div>
+      <div class="lane core"><h4>record-bot + record service (Python, stdlib + PyYAML)</h4>
+        <div class="row3">
+          <div class="node core"><b>Command handlers</b><span>CONFIRM · REJECT · GIVEN · HANDOFF · ACCEPT · DECIDE · DONE · DISCHARGE · READY · TIMELINE</span></div>
+          <div class="node core"><b>Lookup tool + receipt checker</b><span>GET /chart/&lt;patient&gt;/&lt;entry&gt; · ✓ verified · ⚠ stale</span></div>
+          <div class="node core"><b>Task tracker</b><span>opens and closes room tasks, mirrors to Jira if configured</span></div>
+        </div>
+        <div class="row3" style="margin-top:12px">
+          <div class="node store"><b>SQLite</b><span>charts · cases · events · lookups · audit · rooms · room tasks</span></div>
+          <div class="node store"><b>Read-only API</b><span>/api/cases · /api/rooms · /api/tasks · /api/audit</span></div>
+          <div class="node store"><b>Mission-control page</b><span>polls the API · never writes</span></div>
+        </div></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="seq">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Message flow</p><h2 id="seq">One case, thirteen checked steps.</h2></div>
+    <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>#</th><th>From</th><th>Action</th><th>To</th><th>What the code checks</th></tr></thead><tbody><tr><td>1</td><td><b>patient-101</b></td><td>Patient posts</td><td><b>record-bot</b></td><td>Resolves the author by Mattermost user_id. Ignores edited posts and posts from the wrong patient room.</td></tr><tr><td>2</td><td><b>record-bot</b></td><td>Forwards to nurse-station</td><td><b>intake</b></td><td>Mentions @intake with the original post id, the active orders and the chart version.</td></tr><tr><td>3</td><td><b>intake</b></td><td>Posts a JSON claim card</td><td><b>record-bot</b></td><td>Status can only be possible_discrepancy. The quote must be an exact substring of the original post.</td></tr><tr><td>4</td><td><b>record-bot</b></td><td>Validates, opens Case 17</td><td><b>nurse-station · patient-101</b></td><td>Checks order, chart version, forwarded id. Then opens the thread and sends the patient a fixed template.</td></tr><tr><td>5</td><td><b>nurse</b></td><td>CONFIRM Case 17</td><td><b>record-bot</b></td><td>Accepted only as a reply in that case's nurse thread, from a user with the nurse role.</td></tr><tr><td>6</td><td><b>record-bot</b></td><td>Opens the doctor thread</td><td><b>care-coordinator</b></td><td>Case moves to CONFIRMED_CONFLICT. Mentions @care-coordinator in doctor-review.</td></tr><tr><td>7</td><td><b>care-coordinator</b></td><td>GET /chart/&lt;patient&gt;/&lt;entry&gt;</td><td><b>lookup tool</b></td><td>Plain code. Logs a numbered lookup: agent, entry, chart version, label, value, time.</td></tr><tr><td>8</td><td><b>care-coordinator</b></td><td>Posts a summary with citations</td><td><b>record-bot</b></td><td>Each citation looks like [proc-1 v3 · lookup #31 = Thu 9:00].</td></tr><tr><td>9</td><td><b>record-bot</b></td><td>Posts a ✓ or ⚠ card</td><td><b>doctor thread</b></td><td>Built from the lookup log, not from the agent's words. Stale, missing or wrong receipts never get a ✓.</td></tr><tr><td>10</td><td><b>Dr. Lee</b></td><td>DECIDE Case 17 v3 diet=regular</td><td><b>record-bot</b></td><td>Verified doctor, doctor-review, case thread, unedited, current chart version, case confirmed.</td></tr><tr><td>11</td><td><b>record-bot</b></td><td>Chart v3 → v4, tells the patient</td><td><b>patient-101</b></td><td>Posts the doctor's words verbatim plus the owner line. Only code says resolved.</td></tr><tr><td>12</td><td><b>nurses</b></td><td>GIVEN · HANDOFF · ACCEPT</td><td><b>record-bot</b></td><td>Medication given is stored apart from orders. Only the owner can hand off, open or resolved; the owner changes only when the incoming nurse accepts.</td></tr><tr><td>13</td><td><b>record-bot</b></td><td>Opens a tray task in room-service</td><td><b>Sam or Rita</b></td><td>A diet decision opens it. Only room service can reply DONE; anyone else is refused and logged.</td></tr></tbody></table></div></div>
+  </div>
+</section>
+
+<section aria-labelledby="valid">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Validation</p><h2 id="valid">What has to be true before anything changes.</h2></div>
+    <div class="grid2" style="gap:24px">
+      <div class="card reveal"><h3>A claim card is accepted only if</h3>
+        <ul class="clean yes"><li>its <span class="mono">quote</span> is an exact substring of the original patient post;</li>
+        <li>it names an active order of that topic;</li>
+        <li>it cites the current chart version;</li>
+        <li>its status is <span class="mono">possible_discrepancy</span>, never confirmed.</li></ul></div>
+      <div class="card reveal"><h3>A decision counts only if</h3>
+        <ul class="clean yes"><li>the author is a user with the doctor role, matched by <span class="mono">user_id</span>;</li>
+        <li>it is posted in doctor-review as a reply in that case's thread, unedited;</li>
+        <li>it uses the DECIDE format and names the current chart version;</li>
+        <li>the case is already nurse-confirmed.</li></ul></div>
+    </div>
+    <p class="muted reveal" style="margin-top:16px">Everything a patient can ever read from the service is a fixed template or the doctor's own words. Side effects are keyed and idempotent, so a restart never creates a duplicate case, thread or patient message.</p>
+  </div>
+</section>
+
+<section aria-labelledby="cmd">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Commands and states</p><h2 id="cmd">A small grammar with strict owners.</h2></div>
+    <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Command</th><th>Who</th><th>Where</th><th>Effect</th></tr></thead><tbody><tr><td><span class="mono">CONFIRM Case N</span></td><td>nurse</td><td>nurse-station thread</td><td>POSSIBLE → CONFIRMED</td></tr><tr><td><span class="mono">REJECT Case N &lt;reason&gt;</span></td><td>nurse</td><td>nurse-station thread</td><td>POSSIBLE → REJECTED</td></tr><tr><td><span class="mono">DECIDE Case N vV topic=value</span> + <span class="mono">EXPLAIN:</span></td><td>doctor</td><td>doctor-review thread</td><td>CONFIRMED → RESOLVED, chart v+1</td></tr><tr><td><span class="mono">GIVEN Case N &lt;what&gt; HH:MM</span></td><td>outgoing nurse</td><td>nurse-station thread</td><td>recorded apart from orders</td></tr><tr><td><span class="mono">HANDOFF Case N open: …</span></td><td>the case's owner</td><td>nurse-station thread</td><td>pending handoff, open or resolved case</td></tr><tr><td><span class="mono">ACCEPT Case N</span></td><td>incoming nurse</td><td>nurse-station thread</td><td>owner changes; an open case keeps its state</td></tr><tr><td><span class="mono">DONE T-…</span></td><td>room service</td><td>room-service</td><td>closes a tray or turnover task</td></tr><tr><td><span class="mono">ADVICE Case N: …</span></td><td>doctor</td><td>doctor-review thread</td><td>records dictated advice (never a decision) and offers a draft DECIDE</td></tr><tr><td><span class="mono">DISCHARGE &lt;patient&gt;</span></td><td>nurse</td><td>nurse-station</td><td>opens the room turnover checklist</td></tr><tr><td><span class="mono">READY &lt;room&gt;</span></td><td>nurse</td><td>nurse-station</td><td>answers from open tasks and precautions</td></tr><tr><td><span class="mono">TIMELINE &lt;patient&gt;</span></td><td>nurse · doctor</td><td>staff rooms</td><td>role-scoped timeline</td></tr></tbody></table></div></div>
+    <p class="muted reveal" style="margin-top:14px">Case states: <span class="chip amber">POSSIBLE_DISCREPANCY</span> <span class="chip cyan">CONFIRMED_CONFLICT</span> <span class="chip green">RESOLVED</span> <span class="chip violet">HANDED_OFF</span> <span class="chip red">REJECTED</span></p>
+  </div>
+</section>
+
+<section aria-labelledby="ev">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Evidence receipts</p><h2 id="ev">How a cited fact earns its check mark.</h2></div>
+    <div class="grid2" style="gap:24px">
+      <div class="card reveal"><h3>The lookup tool</h3>
+        <p class="muted">A plain-code endpoint on the record service. Each call is stored with a lookup number, entry, chart version, label, value, time and the agent's name.</p>
+        <p class="cmd">GET /chart/101/proc-1?agent=care-coordinator</p>
+        <p class="cmd">→ citation: [proc-1 v3 · lookup #31 = Thu 9:00]</p></div>
+      <div class="card reveal"><h3>The check, in code</h3>
+        <ul class="clean yes"><li><b>✓ verified</b>: the lookup exists and matches entry, version, agent, patient and value.</li>
+        <li><b>⚠ unverified</b>: no matching lookup, wrong value, entry, version, agent or patient.</li>
+        <li><b>⚠ stale</b>: the chart has moved past the version that was read.</li>
+        <li>Text without a citation is labelled unverified interpretation.</li></ul></div>
+    </div>
+    <p class="muted reveal" style="margin-top:14px;font-size:.9rem">Limit: the agent name in a lookup request is self-declared unless a lookup key is set, so the log shows what was fetched on this machine, not who authenticated.</p>
+  </div>
+</section>
+
+<section aria-labelledby="db">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Database and API</p><h2 id="db">SQLite underneath, read-only on top.</h2></div>
+    <div class="grid2" style="gap:24px">
+      <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Table</th><th>Holds</th></tr></thead><tbody><tr><td>chart_versions</td><td>every chart version, who changed it</td></tr><tr><td>cases</td><td>state, quote, order, chart version, owner, thread roots</td></tr><tr><td>events</td><td>said, draft, nurse, agent check, lookup, chart, decision, given, owner, handoff</td></tr><tr><td>decisions · handoffs · tasks · meds</td><td>the doctor's decision, handoffs, owners, medication given</td></tr><tr><td>lookups</td><td>the evidence log behind every receipt</td></tr><tr><td>rooms · room_tasks</td><td>who was in each room before, and the turnover checklist</td></tr><tr><td>audit</td><td>every accepted, rejected or ignored command, with the reason</td></tr><tr><td>posts_seen · outbox</td><td>idempotency keys for replay</td></tr></tbody></table></div></div>
+      <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Endpoint</th><th>Returns</th></tr></thead><tbody><tr><td><span class="mono">/api/cases[?state=]</span></td><td>cases and their state</td></tr><tr><td><span class="mono">/api/cases/&lt;n&gt;</span></td><td>events, decision, task, handoffs</td></tr><tr><td><span class="mono">/api/patients/&lt;id&gt;/chart</span></td><td>current chart, and /versions</td></tr><tr><td><span class="mono">/api/lookups[?agent=]</span></td><td>the evidence log</td></tr><tr><td><span class="mono">/api/rooms · /api/tasks</span></td><td>rooms, previous occupant, open and done tasks, ready flag</td></tr><tr><td><span class="mono">/api/audit</span></td><td>accepted and refused commands</td></tr><tr><td><span class="mono">/api/timeline/&lt;id&gt;?role=</span></td><td>role-scoped timeline (Markdown or HTML)</td></tr><tr><td><span class="mono">/healthz</span></td><td>service status</td></tr></tbody></table></div></div>
+    </div>
+    <p class="muted reveal" style="margin-top:14px">The API cannot change the record and refuses the patient role. Bound to 127.0.0.1 by default.</p>
+  </div>
+</section>
+
+<section aria-labelledby="ver">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Verification</p><h2 id="ver">What has been run, and what has not.</h2></div>
+    <div class="grid2" style="gap:24px">
+      <div class="card reveal"><h3>Run</h3>
+        <ul class="clean yes"><li>98 automated tests, no network.</li>
+        <li>The full ward run against a real Mattermost: the case loop, refusals, handoff, room service, voice commands and translation.</li>
+        <li>Offline scripted run: <span class="mono">scripts/demo_offline.py</span>.</li>
+        <li>Refusals: nurse or patient DECIDE, top-level DECIDE, stale chart version.</li></ul></div>
+      <div class="card reveal"><h3>Not yet run live</h3>
+        <ul class="clean no"><li>Mattermost interactive buttons.</li>
+        <li>Jira and Google Calendar calls (request shapes tested against a fake HTTP layer).</li>
+        <li>Switch refusing intake in a patient room.</li>
+        <li>A clinician review. This is a fictional-data demo.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap"><div class="cta reveal">
+    <h2>Read the code.</h2>
+    <p class="lead" style="margin:0 auto">Python, SQLite and a handful of rules you can test.</p>
+    <div class="actions"><a class="btn primary" href="https://github.com/sivasuryachandran/Lantern">View on GitHub</a><a class="btn" href="how-it-works.html">How it works</a></div>
+  </div></div>
+</section>
+</main>
+<footer>
+<div class="wrap">
+  <div>
+    <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
+    <p>Built for the Flip the Switch hackathon, hosted by WeMakeDevs and DevTools Academy, on Switch. Voice-first with Wispr Flow. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+  </div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
+    <li><a href="#" data-placeholder>Demo video [LINK]</a></li>
+    <li><a href="#" data-placeholder>Blog [LINK]</a></li>
+  </ul>
+</div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

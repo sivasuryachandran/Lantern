@@ -239,11 +239,63 @@ class Test7ShiftRules(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT owner FROM tasks").fetchone()[0], "nurse-ben")
 
 
-class TestHandoffNeedsResolution(unittest.TestCase):
-    def test_handoff_before_resolution_is_rejected(self):
+class TestHandoffOfOpenCases(unittest.TestCase):
+    """A handoff is for what is still open. The owner can hand over an open case; accepting it moves ownership only."""
+
+    def handoff(self, chat, svc, case, user="nurse-ana"):
+        svc.handle(chat.say(user, "nurse-station", f"HANDOFF Case {case['id']} open: awaiting Dr. Lee; fall risk", case["nurse_root"]))
+
+    def accept(self, chat, svc, case, user="nurse-ben"):
+        svc.handle(chat.say(user, "nurse-station", f"ACCEPT Case {case['id']}", case["nurse_root"]))
+
+    def test_open_case_is_handed_off_with_its_state_unchanged(self):
         chat, roles, db, svc = make_env()
         _, case = open_case(chat, svc)
-        svc.handle(chat.say("nurse-ana", "nurse-station", f"HANDOFF Case {case['id']} open: x", case["nurse_root"]))
+        case = confirm(chat, svc, case)                         # confirmed, waiting for the doctor
+        self.handoff(chat, svc, case)
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM handoffs").fetchone()[0], 1)
+        self.accept(chat, svc, case)
+        after = svc.case(case["id"])
+        self.assertEqual(after["state"], CONFIRMED)             # still awaiting the doctor
+        self.assertEqual(after["owner"], "nurse-ben")           # but Ben owns it now
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM decisions").fetchone()[0], 0)
+        self.assertEqual(svc.chart("101")["chart_version"], 3)  # the chart never moved
+
+    def test_doctor_can_still_decide_after_an_open_handoff_and_ben_stays_the_owner(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        self.handoff(chat, svc, case)
+        self.accept(chat, svc, case)
+        decide(chat, svc, case)
+        after = svc.case(case["id"])
+        self.assertEqual((after["state"], after["owner"]), (RESOLVED, "nurse-ben"))
+        self.assertEqual(svc.chart("101")["chart_version"], 4)
+        self.assertEqual(db.execute("SELECT owner FROM tasks WHERE case_id=?", (case["id"],)).fetchone()[0], "nurse-ben")
+        self.assertIn("Following up: nurse-ben", [p["message"] for p in chat.bot_posts("patient-101")][-2:])
+
+    def test_only_the_owner_can_hand_off(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        db.execute("UPDATE cases SET owner='nurse-ben' WHERE id=?", (case["id"],))      # Ben owns it; Ana does not
+        db.commit()
+        self.handoff(chat, svc, case)
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM handoffs").fetchone()[0], 0)
+        self.assertEqual(db.execute("SELECT outcome FROM audit WHERE action='HANDOFF'").fetchone()[0], "rejected")
+
+    def test_accept_without_a_handoff_is_refused_on_an_open_case(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        self.accept(chat, svc, case)
+        self.assertEqual(svc.case(case["id"])["owner"], "nurse-ana")
+
+    def test_a_rejected_case_has_nothing_to_hand_off(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        svc.handle(chat.say("nurse-ana", "nurse-station", f"REJECT Case {case['id']} not what she meant", case["nurse_root"]))
+        self.handoff(chat, svc, svc.case(case["id"]))
         self.assertEqual(db.execute("SELECT COUNT(*) FROM handoffs").fetchone()[0], 0)
 
 

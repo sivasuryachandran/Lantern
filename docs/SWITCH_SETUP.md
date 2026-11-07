@@ -8,7 +8,7 @@ Rebuild this fresh after the event opens (Tue Nov 3, 10:31 AM PT); it takes abou
    - `care-coordinator`: nurse-station and doctor-review
    Their Mattermost usernames must match `config/roles.yaml` (or edit that file).
    - **Restrict who can address each agent.** A new agent is owner-only, so record-bot is ignored until you change "Who can talk to your agent". Do not use "Anyone": Switch also puts agents in Mattermost's Town Square, where patient accounts are members. Use custom rules instead: users any, agents none, rooms `nurse-station` for intake, `nurse-station` and `doctor-review` for care-coordinator.
-3. Create users and the four private rooms (membership comes from `config/roles.yaml`):
+3. Create users and the nine private rooms (four patient rooms, nurse-station, doctor-review and three write-only ward feeds) (membership comes from `config/roles.yaml`):
 
    ```bash
    MM_URL=http://localhost:8065 MM_ADMIN_TOKEN=<admin token> MM_TEAM=switch .venv/bin/python scripts/setup_mattermost.py
@@ -30,3 +30,13 @@ Rebuild this fresh after the event opens (Tue Nov 3, 10:31 AM PT); it takes abou
 6. Run `.venv/bin/python scripts/check_intake.py` to post the three casual phrasings from test 1 against the live agent.
 
 7. Lookup tool check: with the bot running, `curl -s "http://127.0.0.1:8099/chart/101/proc-1?agent=care-coordinator"` should return JSON with a `lookup` number, and an unknown agent name should return 403.
+
+## Which Mattermost team Console sees
+
+Switch Console lists the rooms of **one** Mattermost team on its local server (its bridge user is `switchadmin`). On the demo machine that team is `blast`, so the nine Lantern rooms were created there, with `switchadmin` added to each, and every script runs with `MM_TEAM=blast`:
+
+```bash
+export MM_URL=http://localhost:8065 MM_TEAM=blast LANTERN_TEST_PASSWORD=<throwaway password>
+scripts/reset_demo.sh
+```
+If your Console shows a different team, create the rooms in that team (or use `scripts/setup_mattermost.py` with `MM_TEAM` set to it) and add Console's bridge user to each room, or Console will not list them.

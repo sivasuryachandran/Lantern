@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>All cases · Lantern</title>
+<meta name="description" content="Browse every Lantern case: filter by state, search, and open a case to see its timeline. Fictional sample data.">
+<meta name="theme-color" content="#0A101C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 48'%3E%3Cpath d='M8 12h14l2 22H6z' fill='%23F5B544'/%3E%3Cpath d='M8 12l7-6 7 6' fill='none' stroke='%23F5B544' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+<div class="wrap">
+  <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
+  <nav class="nav-links" id="navlinks" aria-label="Main">
+    <a href="how-it-works.html">How it works</a>
+    <a href="features.html">Features</a>
+    <a href="built-on-switch.html">Built on Switch</a>
+    <a href="cases.html" aria-current="page">Cases</a>
+    <a href="technical.html">Technical</a>
+    <a href="about.html">About</a>
+    <a href="index.html#film">Film</a>
+    <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <span class="badge">Fictional data · not for clinical use</span>
+    <a class="gh" href="https://github.com/sivasuryachandran/Lantern" aria-label="Lantern on GitHub"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.200 1.900.9 2.300.7.1-.5.3-.9.5-1.100-1.800-.2-3.600-.9-3.600-4 0-.9.3-1.600.8-2.100-.1-.2-.4-1 .1-2.100 0 0 .7-.2 2.200.8a7.500 7.500 0 0 1 4 0c1.500-1 2.200-.8 2.200-.8.4 1.100.2 1.900.1 2.100.5.6.8 1.300.8 2.100 0 3.100-1.900 3.800-3.600 4 .3.3.6.8.6 1.500v2.200c0 .2.1.5.6.4A8 8 0 0 0 8 0z"/></svg>GitHub</a>
+  </div>
+  <button class="menu-btn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+</div>
+<div class="m-strip"><span class="badge">Fictional data · not for clinical use</span></div>
+</header>
+
+<main id="main">
+<section class="page-hero"><div class="wrap">
+  <p class="eyebrow">Cases</p>
+  <h1>Every case, in one place.</h1>
+  <p class="lead">Filter by state, search the patient's words, and open a case to see its timeline. Kinds of record are never merged, so you can always tell what was said from what was confirmed.</p>
+  <p class="muted" style="font-size:.9rem">Fictional sample data. Cases 14 to 16 are the seeded history; Cases 17 and 18 come from a local run.</p>
+</div></section>
+<section style="padding-top:0"><div class="wrap">
+  <div class="tools">
+    <div id="filters" role="group" aria-label="Filter by state" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <input id="search" class="search" type="search" placeholder="Search the patient's words, owner, case number" aria-label="Search cases">
+    <button id="expandAll" class="fbtn" type="button" data-open="0">Expand all</button>
+  </div>
+  <p id="count" class="muted" style="font-size:.9rem" aria-live="polite"></p>
+  <div id="caseList"></div>
+</div></section>
+</main>
+<footer>
+<div class="wrap">
+  <div>
+    <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
+    <p>Built for the Flip the Switch hackathon, hosted by WeMakeDevs and DevTools Academy, on Switch. Voice-first with Wispr Flow. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+  </div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
+    <li><a href="#" data-placeholder>Demo video [LINK]</a></li>
+    <li><a href="#" data-placeholder>Blog [LINK]</a></li>
+  </ul>
+</div>
+</footer>
+<script src="app.js"></script>
+<script src="cases-data.js"></script>
+<script src="cases.js"></script>
+</body>
+</html>

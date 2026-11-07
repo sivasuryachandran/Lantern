@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lantern demo cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Code-made cards for the 3-minute demo. Every frame is a pure function of t: window.setT(t). Pick a card with ?card=title|brand|rooms|flow|end */
+:root{--bg:#0A101C;--panel:#111A2B;--line:#1E2A40;--ink:#E8EDF5;--muted:#9AA6B8;--amber:#F5B544;--green:#3DD68C;--cyan:#4CC9F0;--violet:#A78BFA;--red:#F87171}
+html,body{margin:0;background:#000}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Manrope,system-ui,sans-serif;color:var(--ink)}
+.abs{position:absolute}.serif{font-family:Fraunces,"Iowan Old Style",Georgia,serif;font-variation-settings:"opsz" 48;font-weight:380}.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.card{position:absolute;inset:0;visibility:hidden}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:26px;box-sizing:border-box}
+.pill{display:inline-block;padding:8px 18px;border-radius:99px;border:2px solid var(--line);font-size:26px;font-weight:600;background:#0E1626}
+.pill.agent{color:var(--cyan);border-color:#17586a}.pill.person{color:var(--ink)}
+#grain{position:absolute;inset:-256px;opacity:.06;mix-blend-mode:screen;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>");pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(closest-side at 50% 50%,rgba(0,0,0,0) 64%,rgba(0,0,0,.5));pointer-events:none}
+#fine{position:absolute;right:48px;bottom:30px;font:500 22px Manrope,sans-serif;color:#6f7c93}
+.tile{position:absolute;padding:26px 30px}
+.tile h3{margin:0;font:600 36px "JetBrains Mono",monospace}
+.tile p{margin:8px 0 0;color:var(--muted);font-size:24px}
+.node{position:absolute;box-sizing:border-box;border:2px solid var(--line);border-radius:20px;background:var(--panel);padding:16px 22px}
+.node b{display:block;font-size:30px;font-weight:600}
+.node span{display:block;font-size:22px;color:var(--muted);margin-top:4px}
+.node.agent{border-color:#17586a}.node.agent b{color:var(--cyan)}
+.node.svc{border-color:#6b4d16}.node.svc b{color:var(--amber)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- 1 title: the quote against the chart -->
+  <div id="c-title" class="card">
+    <div id="tq" class="abs panel" style="left:150px;top:360px;width:800px;height:300px;padding:36px 44px;border-radius:40px 40px 40px 8px">
+      <div class="mono" style="font-size:24px;color:var(--muted);margin-bottom:16px">patient-101 · 6:40 AM · fictional</div>
+      <div id="tqText" class="serif" style="font-size:46px;line-height:1.22;font-style:italic"></div></div>
+    <div id="tchip" class="abs panel" style="left:1090px;top:420px;width:680px;height:180px;padding:30px 44px">
+      <div class="mono" style="font-size:24px;color:var(--muted)">chart · ord-diet-1</div>
+      <div class="mono" style="font-size:50px;font-weight:600;margin-top:12px;white-space:nowrap">Diet order: NPO · v3</div></div>
+    <svg class="abs" width="1920" height="1080" style="left:0;top:0"><path id="tline" d="M950 510 C 1010 450, 1030 570, 1090 510" fill="none" stroke="#F5B544" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>
+    <div id="tcap" class="abs serif" style="left:0;right:0;top:800px;text-align:center;font-size:64px">What she heard ≠ what the chart says</div>
+  </div>
+
+  <!-- 2 brand: LANTERN + tagline -->
+  <div id="c-brand" class="card">
+    <div id="bwire" class="abs" style="left:960px;top:200px"></div>
+    <div id="bword" class="abs serif" style="left:0;right:0;top:400px;text-align:center;font-size:170px;line-height:1;letter-spacing:.26em;padding-left:.26em">LANTERN</div>
+        <div class="abs" style="left:0;right:0;top:640px;text-align:center;font-size:58px;line-height:1.3">
+      <span id="p1" class="serif" style="opacity:0">What was said.</span> <span id="p2" class="serif" style="opacity:0;margin:0 14px">What was confirmed.</span> <span id="p3" class="serif" style="opacity:0">Who owns what's next.</span></div>
+  </div>
+
+  <!-- 3 rooms: layout C. Phase A: agents + team -> Switch -> real tasks. Phase B: the ward's nine rooms -->
+  <div id="c-rooms" class="card">
+    <div id="hub">
+      <div id="htitle" class="abs serif" style="left:0;right:0;top:80px;text-align:center;font-size:64px">Switch turns agents into teammates</div>
+      <div id="hAg" class="abs panel" style="left:110px;top:250px;width:520px;height:330px;padding:28px 34px">
+        <div style="font-size:24px;color:var(--muted);letter-spacing:.12em">AI AGENTS</div>
+        <div style="margin-top:22px"><span class="pill agent" style="font-size:32px">intake</span></div>
+        <div style="margin-top:14px"><span class="pill agent" style="font-size:32px">care-coordinator</span></div>
+        <div style="margin-top:18px;font-size:22px;color:var(--muted)">staff rooms only</div></div>
+      <div id="hTeam" class="abs panel" style="left:110px;top:620px;width:520px;height:300px;padding:28px 34px">
+        <div style="font-size:24px;color:var(--muted);letter-spacing:.12em">YOUR TEAM</div>
+        <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Nurse Ana</span><span class="pill person">Nurse Ben</span><span class="pill person">Dr. Lee</span><span class="pill person">Sam · room service</span><span class="pill person">patients</span></div></div>
+      <div id="hSw" class="abs node agent" style="left:760px;top:430px;width:420px;height:250px;padding:24px 28px"><b style="font-size:46px">Switch</b><span style="font-size:24px;margin-top:10px">rooms · threads · roles · addressing</span><span style="font-size:22px">Mattermost</span></div>
+      <div id="hOut" class="abs panel" style="left:1310px;top:330px;width:500px;height:430px;padding:28px 34px">
+        <div style="font-size:24px;color:var(--muted);letter-spacing:.12em">REAL TASKS, DONE</div>
+        <div style="margin-top:22px;font-size:30px;line-height:1.5">Case resolved by the doctor<br>Tray delivered, recorded<br>Medicine given, recorded<br>Shift handed to the next nurse</div></div>
+      <svg class="abs" width="1920" height="1080" style="left:0;top:0">
+        <path id="h1" d="M630 415 C 700 415, 700 520, 760 520" stroke="#4CC9F0" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+        <path id="h2" d="M630 770 C 700 770, 700 600, 760 600" stroke="#E8EDF5" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+        <path id="h3" d="M1180 555 H1310" stroke="#F5B544" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>
+    </div>
+    <div id="ward">
+      <div id="rtitle" class="abs serif" style="left:0;right:0;top:50px;text-align:center;font-size:54px">One ward: nine rooms, two AI agents, agents never in a patient room</div>
+      <div class="abs mono" style="left:90px;top:150px;font-size:22px;color:var(--muted);letter-spacing:.1em">PATIENT ROOMS</div>
+      <div class="abs mono" style="left:700px;top:150px;font-size:22px;color:var(--muted);letter-spacing:.1em">STAFF ROOMS</div>
+      <div class="abs mono" style="left:1330px;top:150px;font-size:22px;color:var(--muted);letter-spacing:.1em">WARD FEEDS</div>
+      <div id="p1" class="tile panel" style="left:90px;top:190px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-101</h3><p style="font-size:22px">no agents</p></div>
+      <div id="p2" class="tile panel" style="left:90px;top:345px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-102</h3><p style="font-size:22px">no agents</p></div>
+      <div id="p3" class="tile panel" style="left:90px;top:500px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-103</h3><p style="font-size:22px">no agents</p></div>
+      <div id="p4" class="tile panel" style="left:90px;top:655px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-104</h3><p style="font-size:22px">no agents</p></div>
+      <div id="r3" class="tile panel" style="left:700px;top:190px;width:540px;height:290px;padding:24px 28px"><h3 style="font-size:32px">nurse-station</h3>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Ana</span><span class="pill person">Ben</span><span class="pill agent">intake</span><span class="pill agent">care-coordinator</span></div></div>
+      <div id="r4" class="tile panel" style="left:700px;top:500px;width:540px;height:285px;padding:24px 28px"><h3 style="font-size:32px">doctor-review</h3>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Dr. Lee</span><span class="pill person">Ana</span><span class="pill agent">care-coordinator</span></div></div>
+      <div id="f1" class="tile panel" style="left:1330px;top:190px;width:500px;height:150px;padding:18px 26px"><h3 style="font-size:30px">orders</h3><p style="font-size:22px">every chart change</p></div>
+      <div id="f2" class="tile panel" style="left:1330px;top:365px;width:500px;height:150px;padding:18px 26px"><h3 style="font-size:30px">medication</h3><p style="font-size:22px">every dose given</p></div>
+      <div id="f3" class="tile panel" style="left:1330px;top:540px;width:500px;height:245px;padding:18px 26px"><h3 style="font-size:30px">room-service</h3><p style="font-size:22px">tray and turnover tasks</p>
+        <div style="margin-top:14px;display:flex;gap:10px"><span class="pill person" style="font-size:22px">Sam</span><span class="pill person" style="font-size:22px">Rita</span></div></div>
+      <div id="rsvc" class="abs node svc" style="left:90px;top:850px;width:1740px;height:130px"><b>Lantern service</b><span>code, not AI · SQLite record · forwards, opens case threads, logs lookups, checks decisions, opens and closes room tasks</span></div>
+      <svg class="abs" width="1920" height="1080" style="left:0;top:0"><g id="rdots" stroke="#F5B544" stroke-width="3" stroke-dasharray="4 10" fill="none"><path d="M325 785 V850"/><path d="M970 785 V850"/><path d="M1580 785 V850"/></g></svg>
+    </div>
+  </div>
+
+  <!-- 4 flow: technical diagram -->
+  <div id="c-flow" class="card">
+    <div id="ftitle" class="abs serif" style="left:140px;top:60px;font-size:60px">Under the hood</div>
+    <div id="fA" class="node" style="left:120px;top:210px;width:380px;height:110px"><b>patient-101</b><span>Mattermost post</span></div>
+    <div id="fB" class="node svc" style="left:740px;top:210px;width:420px;height:110px"><b>Lantern service</b><span>Python · forwards · opens cases</span></div>
+    <div id="fBdb" class="node svc" style="left:740px;top:380px;width:420px;height:200px"><b style="font-size:26px">SQLite record</b><span>cases · chart v3/v4 · lookups · audit</span><span style="color:var(--amber);margin-top:14px">verify author · role · room · thread · chart version</span></div>
+    <div id="fC" class="node" style="left:1400px;top:190px;width:380px;height:100px"><b>nurse-station</b><span>Switch room</span></div>
+    <div id="fD" class="node agent" style="left:1400px;top:340px;width:380px;height:100px"><b>intake agent</b><span>via Switch · claim card</span></div>
+    <div id="fE" class="node" style="left:1400px;top:490px;width:380px;height:100px"><b>Case 17 thread</b><span>nurse replies CONFIRM</span></div>
+    <div id="fF" class="node agent" style="left:1400px;top:640px;width:380px;height:100px"><b>care-coordinator</b><span>via Switch · cited facts</span></div>
+    <div id="fG" class="node" style="left:740px;top:790px;width:420px;height:110px"><b>doctor-review thread</b><span>Dr. Lee: DECIDE · nurse-ben: ACCEPT</span></div>
+    <div id="fH" class="node" style="left:90px;top:790px;width:550px;height:110px"><b style="white-space:nowrap">patient gets the doctor's words</b><span>owner line updates</span></div>
+    <div id="fSw" class="abs" style="left:1330px;top:112px;width:520px;text-align:center"><span class="pill agent" style="font-size:24px;white-space:nowrap">Switch · rooms, threads, roles</span></div>
+    <svg class="abs" width="1920" height="1080" style="left:0;top:0;overflow:visible">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>
+      <path id="a1" d="M500 265 H740" stroke="#E8EDF5" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a2" d="M1160 240 H1400" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a3" d="M1590 290 V340" stroke="#4CC9F0" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a4" d="M1590 440 V490" stroke="#4CC9F0" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a5" d="M1590 590 V640" stroke="#E8EDF5" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a6" d="M1400 700 H1280 Q1160 700 1160 790" stroke="#4CC9F0" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a7" d="M950 790 V580" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a9" d="M740 470 H650" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a8" d="M740 845 H640" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+    </svg>
+    <div id="fSwBox" class="abs" style="left:1370px;top:150px;width:440px;height:610px;border:3px dashed #17586a;border-radius:28px;opacity:0"></div>
+    <div id="fFeeds" class="abs" style="left:90px;top:400px;width:560px">
+      <div class="node" style="position:relative;margin-bottom:16px"><b>orders</b><span>chart v3 → v4, who decided</span></div>
+      <div class="node" style="position:relative;margin-bottom:16px"><b>medication</b><span>doses given, apart from orders</span></div>
+      <div class="node" style="position:relative"><b>room-service</b><span>tray task · Sam closes with DONE</span></div></div>
+    <div id="fleg" class="abs" style="left:120px;top:960px;font-size:24px;color:var(--muted)"><span style="color:var(--ink)">●</span> human post &nbsp; <span style="color:var(--cyan)">●</span> agent path &nbsp; <span style="color:var(--amber)">●</span> Lantern service check</div>
+  </div>
+
+  <!-- 5 end card -->
+  <div id="c-end" class="card">
+    <div class="abs serif" style="left:0;right:0;top:250px;text-align:center;font-size:76px;line-height:1.25;font-style:italic">
+      <span id="e1" style="opacity:0;color:var(--cyan)">Agents notice.</span> <span id="e2" style="opacity:0;color:var(--ink)">People decide.</span> <span id="e3" style="opacity:0;color:var(--amber)">Code enforces.</span></div>
+    <div id="eword" class="abs serif" style="left:0;right:0;top:470px;text-align:center;font-size:150px;line-height:1;letter-spacing:.26em;padding-left:.26em">LANTERN</div>
+    <div id="etag" class="abs" style="left:0;right:0;top:660px;text-align:center;font-size:36px;color:var(--muted)">What was said. What was confirmed. Who owns what's next.</div>
+    <div id="edisc" class="abs" style="left:240px;right:240px;top:850px;text-align:center;font-size:25px;line-height:1.5;color:#8793a8">Agent replies, checks and dashboard updates are live. Human roles were played from scripts/demo_driver.py. Fictional data, not for clinical use.</div>
+  </div>
+
+  <div id="vig"></div><div id="grain"></div>
+  <div id="fine">Fictional data · not for clinical use</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ramp=(t,a,b)=>clamp((t-a)/(b-a));
+const ease=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const eo=p=>1-Math.pow(1-p,3);
+const mix=(a,b,p)=>a+(b-a)*p;
+const fade=(t,a,b,fi=.6,fo=.6)=>ease(ramp(t,a,a+fi))*(1-ease(ramp(t,b-fo,b)));
+const show=(id,o)=>{$(id).style.opacity=o};
+const draw=(id,p)=>{$(id).style.strokeDashoffset=1-p};
+const CARD=new URLSearchParams(location.search).get('card')||'title';
+for(const c of ['title','brand','rooms','flow','end']) $('c-'+c).style.visibility=(c===CARD)?'visible':'hidden';
+
+const LAN='<svg viewBox="0 0 30 48" width="100%" height="100%" style="overflow:visible"><path class="f" d="M15 1v5"/><path class="f" d="M8 12 15 6l7 6z"/><path class="f g" d="M8 12h14l2 22H6z"/><path class="fl" d="M15 17c3 4 4 6 4 9a4 4 0 0 1-8 0c0-3 1-5 4-9z"/><rect class="f" x="5" y="34" width="20" height="4" rx="1.5"/></svg>';
+function paint(el,p){const col=`rgb(${Math.round(mix(82,245,p))},${Math.round(mix(97,181,p))},${Math.round(mix(125,68,p))})`;
+ el.querySelectorAll('.f').forEach(n=>{n.setAttribute('fill','none');n.setAttribute('stroke',col);n.setAttribute('stroke-width','1.7');n.setAttribute('stroke-linejoin','round');n.setAttribute('stroke-linecap','round')});
+ el.querySelectorAll('.g').forEach(n=>n.setAttribute('fill',`rgba(245,181,68,${.28*p})`));
+ el.querySelectorAll('.fl').forEach(n=>{n.setAttribute('fill','#F5B544');n.setAttribute('opacity',p)});
+ el.style.filter=p>.01?`drop-shadow(0 0 ${Math.round(16*p)}px rgba(245,181,68,${(.7*p).toFixed(2)}))`:'none'}
+const bw=$('bwire'),bl=[];
+for(let i=0;i<6;i++){const d=document.createElement('div');d.className='abs';d.style.cssText=`left:${(i-2.5)*150-30}px;top:0;width:60px;height:96px`;d.innerHTML=LAN;bw.appendChild(d);bl.push(d)}
+bw.insertAdjacentHTML('afterbegin','<div class="abs" style="left:-440px;top:0;width:880px;height:3px;background:#1E2A40"></div>');
+const QUOTE="“Can't wait for breakfast. Dr. Lee said it's fine now that my procedure moved.”";
+
+const SCENES={
+ title(t){ // 6 s
+  const o=fade(t,0,6,.4,.5);$('c-title').style.opacity=o;
+  const n=Math.floor(QUOTE.length*eo(ramp(t,.5,3.2)));$('tqText').textContent=QUOTE.slice(0,n);
+  show('tq',ease(ramp(t,.2,.9)));show('tchip',ease(ramp(t,2.8,3.6)));
+  const lk=eo(ramp(t,3.5,4.5));draw('tline',lk);const pl=lk>=1?.8+.2*Math.sin((t-4.5)*6):1;
+  $('tline').style.opacity=pl;$('tline').style.filter=`drop-shadow(0 0 ${6+10*pl}px #F5B544)`;
+  show('tcap',ease(ramp(t,4.2,5.0)));},
+ brand(t){ // 10 s
+  $('c-brand').style.opacity=fade(t,0,10,.8,.8);
+  show('bword',ease(ramp(t,.8,2.4)));
+  show('p1',ease(ramp(t,3.0,4.0)));show('p2',ease(ramp(t,4.6,5.6)));show('p3',ease(ramp(t,6.2,7.2)));
+  bl.forEach((l,i)=>paint(l,ease(ramp(t,3.0+i*.6,3.8+i*.6))));},
+ rooms(t){ // 28 s
+  $('c-rooms').style.opacity=fade(t,0,28,.5,.6);
+  const hub=1-ease(ramp(t,7.4,8.6)), ward=ease(ramp(t,8.0,9.2));
+  $('hub').style.opacity=hub;$('ward').style.opacity=ward;
+  show('htitle',ease(ramp(t,.3,1.1)));show('hAg',ease(ramp(t,1.0,1.8)));show('hTeam',ease(ramp(t,1.6,2.4)));
+  show('hSw',ease(ramp(t,3.0,3.8)));draw('h1',eo(ramp(t,3.6,4.6)));draw('h2',eo(ramp(t,4.0,5.0)));
+  show('hOut',ease(ramp(t,5.2,6.0)));draw('h3',eo(ramp(t,5.4,6.4)));
+  ['p1','p2','p3','p4'].forEach((id,i)=>show(id,eo(ramp(t,9.0+i*.5,9.8+i*.5))));
+  show('r3',eo(ramp(t,11.4,12.2)));show('r4',eo(ramp(t,12.4,13.2)));
+  ['f1','f2','f3'].forEach((id,i)=>show(id,eo(ramp(t,14.4+i*.7,15.2+i*.7))));
+  show('rsvc',ease(ramp(t,17.5,18.5)));$('rdots').style.opacity=ease(ramp(t,18.5,20));
+  show('rtitle',ease(ramp(t,8.6,9.6)));},
+ flow(t){ // 28 s
+  $('c-flow').style.opacity=fade(t,0,28,.5,.7);
+  show('ftitle',ease(ramp(t,.2,1.0)));show('fA',ease(ramp(t,.8,1.6)));show('fB',ease(ramp(t,1.0,1.8)));show('fBdb',ease(ramp(t,15.6,16.6)));
+  draw('a1',eo(ramp(t,1.8,2.8)));
+  show('fC',ease(ramp(t,3.0,3.8)));draw('a2',eo(ramp(t,3.2,4.2)));
+  show('fSw',ease(ramp(t,5.0,5.8)));
+  show('fD',ease(ramp(t,6.0,6.8)));draw('a3',eo(ramp(t,6.2,7.0)));
+  show('fE',ease(ramp(t,8.0,8.8)));draw('a4',eo(ramp(t,8.2,9.0)));
+  show('fF',ease(ramp(t,10.0,10.8)));draw('a5',eo(ramp(t,10.2,11.0)));
+  show('fG',ease(ramp(t,12.0,12.8)));draw('a6',eo(ramp(t,12.2,13.4)));
+  draw('a7',eo(ramp(t,14.0,15.2)));
+  show('fH',ease(ramp(t,17.2,18.0)));draw('a8',eo(ramp(t,17.4,18.4)));
+  show('fleg',ease(ramp(t,2,3)));show('fSwBox',ease(ramp(t,3.0,4.0))*.9);show('fFeeds',ease(ramp(t,19.0,20.0)));draw('a9',eo(ramp(t,19.4,20.4)));
+  // the service box pulses while the narration describes it
+  const pulse=(t>16&&t<26)?.5+.5*Math.sin((t-16)*3):0;$('fBdb').style.borderColor=`rgba(245,181,68,${.4+.5*pulse})`;$('fBdb').style.boxShadow=`0 0 ${30*pulse}px rgba(245,181,68,.35)`;},
+ end(t){ // 10 s
+  $('c-end').style.opacity=fade(t,0,10,.5,.8);
+  show('e1',ease(ramp(t,.5,1.4)));show('e2',ease(ramp(t,1.7,2.6)));show('e3',ease(ramp(t,2.9,3.8)));
+  show('eword',ease(ramp(t,4.2,5.4)));show('etag',ease(ramp(t,5.4,6.4)));show('edisc',ease(ramp(t,6.6,7.4)));}
+};
+window.setT=function(t){const f=Math.round(t*30);$('grain').style.transform=`translate(${(f*53)%256}px,${(f*97)%256}px)`;SCENES[CARD==='title'?'title':CARD](t)};
+window.setT(+(new URLSearchParams(location.search).get('t')||0));
+</script>
+</body>
+</html>

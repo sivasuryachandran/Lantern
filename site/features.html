@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Features · Lantern</title>
+<meta name="description" content="Every Lantern feature: the ward's rooms, the case loop, commands, agents, voice and translation, room service, records, tracking and the checks behind them.">
+<meta name="theme-color" content="#0A101C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 48'%3E%3Cpath d='M8 12h14l2 22H6z' fill='%23F5B544'/%3E%3Cpath d='M8 12l7-6 7 6' fill='none' stroke='%23F5B544' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+<div class="wrap">
+  <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
+  <nav class="nav-links" id="navlinks" aria-label="Main">
+    <a href="how-it-works.html">How it works</a>
+    <a href="features.html" aria-current="page">Features</a>
+    <a href="built-on-switch.html">Built on Switch</a>
+    <a href="cases.html">Cases</a>
+    <a href="technical.html">Technical</a>
+    <a href="about.html">About</a>
+    <a href="index.html#film">Film</a>
+    <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <span class="badge">Fictional data · not for clinical use</span>
+    <a class="gh" href="https://github.com/sivasuryachandran/Lantern" aria-label="Lantern on GitHub"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.200 1.900.9 2.300.7.1-.5.3-.9.5-1.100-1.800-.2-3.600-.9-3.600-4 0-.9.3-1.600.8-2.100-.1-.2-.4-1 .1-2.100 0 0 .7-.2 2.200.8a7.500 7.500 0 0 1 4 0c1.500-1 2.200-.8 2.200-.8.4 1.100.2 1.900.1 2.100.5.6.8 1.300.8 2.100 0 3.100-1.900 3.800-3.600 4 .3.3.6.8.6 1.500v2.200c0 .2.1.5.6.4A8 8 0 0 0 8 0z"/></svg>GitHub</a>
+  </div>
+  <button class="menu-btn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+</div>
+<div class="m-strip"><span class="badge">Fictional data · not for clinical use</span></div>
+</header>
+
+<main id="main">
+<section class="page-hero"><div class="wrap">
+  <p class="eyebrow">Features</p>
+  <h1>Everything Lantern does.</h1>
+  <p class="lead">One shared record for a ward, run in Switch rooms. All data is fictional.</p>
+</div></section>
+<section style="padding-top:8px"><div class="wrap"><div class="grid2" style="gap:18px">
+<div class="card reveal"><h3>The ward: nine private rooms</h3><ul class="clean yes"><li>Four patient rooms (101 to 104). Only the patient and record-bot are in them; no agent ever is.</li><li><span class=mono>nurse-station</span> and <span class=mono>doctor-review</span> for the care team and the agents.</li><li>Three feeds: <span class=mono>orders</span> (every chart change), <span class=mono>medication</span> (every dose, apart from orders), <span class=mono>room-service</span> (tray and turnover tasks).</li><li>Isolation is room membership: one patient cannot open another's room.</li></ul></div>
+<div class="card reveal"><h3>The case loop</h3><ul class="clean yes"><li>A patient's passing remark is checked against their active orders; the quote stays exact.</li><li>A nurse confirms or rejects. Nothing reaches a doctor on an agent's word alone.</li><li>The care-coordinator cites chart facts from a logged lookup; the service marks each ✓ verified or ⚠ stale from its own log.</li><li>Only a verified doctor can decide. A nurse's DECIDE is refused and logged. The patient gets the doctor's exact words.</li><li>Handoff: the owner hands over open or resolved cases, the next nurse accepts, and ownership changes everywhere.</li></ul></div>
+<div class="card reveal"><h3>Commands</h3><ul class="clean yes"><li><span class=mono>CONFIRM</span>, <span class=mono>REJECT</span>, <span class=mono>DECIDE</span> + <span class=mono>EXPLAIN</span>, <span class=mono>GIVEN</span>, <span class=mono>HANDOFF</span>, <span class=mono>ACCEPT</span>, <span class=mono>TIMELINE</span>.</li><li><span class=mono>ADVICE</span>: dictated doctor advice, logged as advice only, with a draft DECIDE the doctor sends herself.</li><li><span class=mono>REMIND</span>: a follow-up by voice (in 20 min, 11:00, 9am), posted back when due, mirrored to Calendar.</li><li><span class=mono>NOTE</span>: a dictated note for the record; it changes nothing.</li><li><span class=mono>DONE</span>, <span class=mono>DISCHARGE</span>, <span class=mono>READY</span> for room service, turnover and room readiness.</li></ul></div>
+<div class="card reveal"><h3>Agents</h3><ul class="clean yes"><li><b>intake</b> and <b>care-coordinator</b> run as OpenCode agents in Switch Console, with instructions in the repo.</li><li><b>interpreter</b>: translates patient to staff and doctor to patient, always beside the original, and reads aloud.</li><li><b>scribe</b>: files dictated notes, drafts reminders for a person to send, keeps the shift record current.</li><li>Internal code-only tools: chart lookup, receipt checker, room ledger, task tracker, scheduler, audit log.</li></ul></div>
+<div class="card reveal"><h3>Voice and language</h3><ul class="clean yes"><li>Built and run by voice with Wispr Flow: hold Fn and speak commands, prompts and notes.</li><li>Snippets turn a phrase into the exact command prefix; the dictionary turns "at intake" into @intake.</li><li>Patient 103 writes in Spanish; staff read it in English and the patient reads the doctor's words in Spanish, labelled as a translation.</li><li>Read-aloud with macOS speech, in the matching language.</li></ul></div>
+<div class="card reveal"><h3>Care operations</h3><ul class="clean yes"><li>Each room remembers its previous occupant (precautions, diet, notes) and the turnover checklist, done or open.</li><li>A diet decision opens a tray task that only room service can close.</li><li><span class=mono>DISCHARGE</span> opens a five-task turnover checklist; <span class=mono>READY</span> answers from open tasks and precautions.</li><li>A second entry for the same medicine is flagged, never blocked or merged.</li><li>Opt-in reminders for room tasks left open too long.</li></ul></div>
+<div class="card reveal"><h3>Records and dashboards</h3><ul class="clean yes"><li>Mission control: ward tiles, patient cards, cases with a pipeline, ward activity, evidence ledger, chart history, medicines, rooms, tasks, tracking, translations, reminders, command audit.</li><li>The shift record: every patient's words, decisions, refusals, medicines, tasks, reminders, translations and tracked items, in order.</li><li>Role-scoped timelines: five kinds of entry, never merged.</li><li>A read-only API behind all of it.</li></ul></div>
+<div class="card reveal"><h3>Tracking</h3><ul class="clean yes"><li>Jira tasks and Google Calendar events for open cases, reported by the care-coordinator to a tracking ledger shown on the dashboard.</li><li>Lantern's own hooks can create the same items directly when credentials are set.</li><li>Neither is the medical record, and a failing integration never blocks the loop.</li></ul></div>
+<div class="card reveal"><h3>Trust and checks</h3><ul class="clean yes"><li>The service matches people by user id, never by display name, and every side effect is idempotent.</li><li>A claim card must quote the patient exactly, cite an active order and the current chart version.</li><li>A decision needs the doctor role, the doctor room, the case thread, an unedited post and the current chart version.</li><li>98 automated tests, a one-command offline demo, and fictional data throughout.</li></ul></div>
+</div></div></section>
+</main>
+<footer>
+<div class="wrap">
+  <div>
+    <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
+    <p>Built for the Flip the Switch hackathon, hosted by WeMakeDevs and DevTools Academy, on Switch. Voice-first with Wispr Flow. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+  </div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
+    <li><a href="#" data-placeholder>Demo video [LINK]</a></li>
+    <li><a href="#" data-placeholder>Blog [LINK]</a></li>
+  </ul>
+</div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

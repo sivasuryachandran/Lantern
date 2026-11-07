@@ -54,3 +54,8 @@ During the DECIDE scene, post `DECIDE Case 17 v3 diet=regular` plus an `EXPLAIN:
 - [ ] Fonts big enough: browser zoom 125%
 - [ ] Do not show tokens, passwords or terminals with `LANTERN_TEST_PASSWORD`
 - [ ] After recording: speed up waits in editing, never fake a step; add captions
+
+## Populating the whole ward first
+Start the agents first: the real Switch agents if they answer, otherwise `python -m lantern simagents` (say "scripted stand-ins" on screen).
+
+`python scripts/ward_scenarios.py` plays a day on the ward through the Mattermost API (scripted stand-ins for the two agents unless `--real`): patient 101 diet with a refused nurse DECIDE and a tray task closed by room service, patient 102 left awaiting the doctor, patient 103 decided with a flagged double medicine entry and a partial discharge turnover, patient 104 rejected, a refused cross-patient question, and a shift change handing three cases to nurse-ben. Run it after `scripts/reset_demo.sh`, with `MM_TEAM=lantern` (the team Console's connection uses).
