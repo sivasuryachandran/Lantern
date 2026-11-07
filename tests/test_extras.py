@@ -478,3 +478,63 @@ class TestWholeWardExtras(unittest.TestCase):
         self.assertFalse(rooms["4W-102"]["ready"])
         self.assertTrue(rooms["4W-103"]["ready"])
         self.assertIn("T-102-3", rooms["4W-102"]["open_tasks"])
+
+
+class TestDictatedAdvice(unittest.TestCase):
+    def say(self, chat, svc, user, text, root, room="doctor-review"):
+        svc.handle(chat.say(user, room, text, root))
+
+    def setup_case(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        return chat, db, svc, confirm(chat, svc, case)
+
+    def test_advice_is_recorded_as_advice_and_drafts_a_decide_without_applying_it(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: She can have a regular diet today, her procedure moved to Thursday.", case["doctor_root"])
+        self.assertEqual(svc.chart("101")["chart_version"], 3)                       # nothing changed
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM decisions").fetchone()[0], 0)
+        kinds = [e["kind"] for e in db.execute("SELECT kind FROM events WHERE case_id=?", (case["id"],))]
+        self.assertIn("advice", kinds)
+        said = chat.bot_posts("doctor-review")[-1]["message"]
+        self.assertIn("not a decision", said)
+        self.assertIn("@care-coordinator", said)
+        self.assertIn(f"DECIDE Case {case['id']} v3 diet=regular", said)
+        self.assertEqual(svc.case(case["id"])["state"], CONFIRMED)
+
+    def test_the_doctor_still_has_to_send_the_decide_herself(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: regular diet today", case["doctor_root"])
+        self.say(chat, svc, "care-coordinator", f"DECIDE Case {case['id']} v3 diet=regular\nEXPLAIN: agent draft", case["doctor_root"])
+        self.assertEqual(svc.chart("101")["chart_version"], 3)                       # an agent's DECIDE counts for nothing
+        decide(chat, svc, case)
+        self.assertEqual(svc.chart("101")["chart_version"], 4)
+
+    def test_only_a_doctor_in_the_case_thread_can_record_advice(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "nurse-ana", f"ADVICE Case {case['id']}: regular diet", case["doctor_root"])
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: regular diet", "")      # top-level, not the case thread
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM events WHERE kind='advice'").fetchone()[0], 0)
+        outcomes = [r[0] for r in db.execute("SELECT outcome FROM audit WHERE action='ADVICE'")]
+        self.assertEqual(outcomes, ["rejected", "rejected"])
+
+    def test_no_draft_when_the_words_name_no_change(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: Let's talk to the family first.", case["doctor_root"])
+        said = chat.bot_posts("doctor-review")[-1]["message"]
+        self.assertIn("no draft", said)
+        self.assertNotIn("```", said)
+
+    def test_advice_is_staff_only_on_the_timeline(self):
+        chat, db, svc, case = self.setup_case()
+        self.say(chat, svc, "dr-lee", f"ADVICE Case {case['id']}: regular diet today", case["doctor_root"])
+        from lantern import timeline
+        self.assertIn("DOCTOR ADVICE (dictated)", timeline.render(db, svc, "101", "doctor"))
+        self.assertNotIn("DOCTOR ADVICE", timeline.render(db, svc, "101", "patient"))
+
+    def test_replaying_the_same_advice_post_does_not_duplicate_the_reply(self):
+        chat, db, svc, case = self.setup_case()
+        post = chat.say("dr-lee", "doctor-review", f"ADVICE Case {case['id']}: regular diet today", case["doctor_root"])
+        svc.handle(post)
+        svc.handle(post)
+        self.assertEqual(len([p for p in chat.bot_posts("doctor-review") if "Advice recorded" in p["message"]]), 1)

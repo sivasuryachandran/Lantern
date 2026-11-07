@@ -10,6 +10,7 @@
   GET /api/rooms                               rooms, who is there now, the previous occupant, turnover progress
   GET /api/rooms/<room>                        one room with its tasks (done and open)
   GET /api/tasks[?status=open|done&room=]      room-service tasks
+  GET /api/tracking                            Jira tasks and Calendar events the agents reported creating
   GET /api/audit[?limit=]                      accepted/rejected commands with reasons
   GET /api/timeline/<id>?role=nurse|doctor[&format=html]
 """
@@ -90,6 +91,8 @@ def route(svc, path, q):
             if one(key):
                 sql, args = sql + f" AND {col}=?", args + [one(key)]
         return ok(_rows(db.execute(sql + " ORDER BY id", args)))
+    if parts == ["tracking"]:
+        return ok(_rows(db.execute("SELECT * FROM tracking ORDER BY id")))
     if parts == ["audit"]:
         limit = int(one("limit") or 50)
         return ok(_rows(db.execute("SELECT * FROM audit ORDER BY id DESC LIMIT ?", (limit,))))

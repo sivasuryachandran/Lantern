@@ -4,6 +4,7 @@
   GET  /forwarded/<original_post_id>?agent=<name>   returns the Mattermost id of record-bot's forwarded message
   GET  /  (or /ui)                             mission-control page over the read-only API (add ?key= if LANTERN_API_KEY is set)
   GET  /api/...  /healthz                    read-only backend over the database (see lantern/api.py)
+  POST /tracking                               an agent reports a Jira task or Calendar event it created for a case
   POST /action                                 Mattermost interactive-button clicks (user_id is verified by Mattermost)
 
 Bound to 127.0.0.1 by default. Set LANTERN_BIND=0.0.0.0 if Mattermost (e.g. in Docker) must reach the button URL,
@@ -77,6 +78,12 @@ def serve(svc, host="127.0.0.1", port=8099):
 
         def do_POST(self):
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            if self.path.rstrip("/") == "/tracking":
+                key = os.environ.get("LANTERN_LOOKUP_KEY")
+                if key and self.headers.get("X-Lookup-Key") != key:
+                    return self._send(403, {"error": "bad lookup key"})
+                with lock:
+                    return self._send(200, svc.record_tracking(body.get("agent", ""), body))
             with lock:
                 text = svc.handle_action(body.get("user_id", ""), body.get("context", {}))
             self._send(200, {"ephemeral_text": text})

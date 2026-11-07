@@ -117,7 +117,7 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 70 tests, no network.
+- `python -m unittest discover -s tests`: 82 tests, no network.
 - `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
 - **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
   - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
@@ -133,6 +133,12 @@ Calendar and Jira are called directly by the record service rather than as Switc
 ## Lantern × Wispr Flow
 
 Voice is how a ward talks, so the commands are designed to be spoken: snippets supply the exact prefix (`HANDOFF Case `), a dictionary turns "at intake" into `@intake`, and Whisper Mode fits a quiet night shift. The full feature table, the snippet and dictionary lists (so you can reproduce it), the Privacy Mode note and the status of each part are in [docs/WISPR.md](docs/WISPR.md). The Insights scorecard is `docs/wispr-scorecard.png` once it exists; nothing in that file is claimed as done before it is.
+
+## Stand-in agents and the tracking ledger
+
+`lantern/simagents.py` implements `intake` and `care-coordinator` as real agents without a model: each logs in as its own Mattermost account, reads the rooms, answers only record-bot's @mentions, gets chart facts only through the logged lookup tool, and posts the same cards, summaries and handoff briefs the instructions in `docs/agents/` ask for. Run them with `python -m lantern simagents` (needs `MM_URL`, `MM_TEAM`, `LANTERN_TEST_PASSWORD`). They exist so the whole ward can be shown working when the real Switch agents are unreachable; say so on screen. `scripts/ward_scenarios.py` plays only the people and a full day of scenarios.
+
+After a handoff brief, the care-coordinator stand-in reports the Jira task and Calendar event for the case to `POST /tracking`; the service records it once, puts a TRACKING row on the timeline, and the dashboard's Tracking panel lists it, marked **simulated** (the tasks KAN-4 to KAN-6 and three events were made by hand and are mapped in `data/tracking-demo.json`). Doctors can also record dictated advice with `ADVICE Case N: ...`; record-bot logs it as advice, never as a decision, and offers a draft `DECIDE` for the doctor to check and send herself.
 
 ## Nurse review
 

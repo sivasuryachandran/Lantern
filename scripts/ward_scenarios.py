@@ -1,12 +1,12 @@
 """Populate the ward with a day of scenarios through the Mattermost API, so every dashboard has something to show.
 
-Plays the people (patients, nurses, Dr. Lee, room service) and, unless --real is given, scripted stand-ins for the two
-agents (intake, care-coordinator). Say so on screen if you record it. Needs MM_URL, MM_TEAM, LANTERN_TEST_PASSWORD and the
-record service running (scripts/start.sh).
+Plays the people only (patients, nurses, Dr. Lee, room service). The two agents must be running: the real Switch agents,
+or the scripted stand-ins with `python -m lantern simagents` (say so on screen). Needs MM_URL, MM_TEAM,
+LANTERN_TEST_PASSWORD and the record service running (scripts/start.sh).
 
-  python scripts/ward_scenarios.py [--real] [--service http://127.0.0.1:8099]
+  python scripts/ward_scenarios.py [--service http://127.0.0.1:8099]
 
-Scenarios: 101 diet (full loop, a refused nurse DECIDE, tray task closed by room service); 102 activity (confirmed, left open);
+Scenarios: 101 diet (full loop, a refused nurse DECIDE, dictated doctor advice with a draft, tray task closed by room service); 102 activity (confirmed, left open);
 103 activity (decided, double medicine entry, discharge with part of the turnover done); 104 (nurse rejects); a patient asking
 about someone else's case (refused); shift change handing over three cases.
 """
@@ -19,11 +19,11 @@ import time
 import urllib.request
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--real", action="store_true")
+ap.add_argument("--real", action="store_true", help="accepted for compatibility; the agents are always external now")
 ap.add_argument("--service", default=os.environ.get("LANTERN_SERVICE", "http://127.0.0.1:8099"))
 args = ap.parse_args()
 URL, TEAM, PW = os.environ["MM_URL"].rstrip("/"), os.environ.get("MM_TEAM", "lantern"), os.environ["LANTERN_TEST_PASSWORD"]
-WAIT = 150 if args.real else 30
+WAIT = 150
 
 
 def call(token, method, path, body=None):
@@ -39,8 +39,6 @@ def login(name):
 
 
 people = ["patient-101", "patient-102", "patient-103", "patient-104", "nurse-ana", "nurse-ben", "dr-lee", "service-sam", "service-rita", "record-bot"]
-if not args.real:
-    people += ["intake", "care-coordinator"]
 tok = {n: login(n) for n in people}
 chan = {r: call(tok["record-bot"], "GET", f"/teams/name/{TEAM}/channels/name/{r}")["id"]
         for r in ("patient-101", "patient-102", "patient-103", "patient-104", "nurse-station", "doctor-review", "room-service")}
@@ -82,11 +80,6 @@ def concern(patient, text, quote, topic):
     t = int(time.time() * 1000) - 500
     orig = say(f"patient-{patient}", f"patient-{patient}", text)
     fwd = wait("nurse-station", lambda p: orig in p["message"] and "@intake" in p["message"], "forward to intake", t)
-    if not args.real:
-        say("intake", "nurse-station", json.dumps({
-            "patient_id": patient, "topic": topic, "status": "possible_discrepancy", "patient_says": f"believes the {topic} order allows it",
-            "quote": quote, "source": {"room": f"patient-{patient}", "original_post_id": orig, "forwarded_post_id": fwd["id"]},
-            "conflicts_with": {"order_id": order["id"], "chart_version": chart["chart_version"]}}))
     root = wait("nurse-station", lambda p: "possible discrepancy (unconfirmed)" in p["message"] and p["create_at"] > fwd["create_at"], "case root", t)
     n = int(re.match(r"Case (\d+)", root["message"]).group(1))
     print(f"  patient {patient}: Case {n} opened ({topic})")
@@ -96,9 +89,6 @@ def concern(patient, text, quote, topic):
 def confirm(n, root, quote, order, patient):
     say("nurse-ana", "nurse-station", f"CONFIRM Case {n}", root)
     d = wait("doctor-review", lambda p: "nurse-confirmed conflict" in p["message"] and f"Case {n}" in p["message"], "doctor thread")
-    if not args.real:
-        a = lookup(patient, order)
-        say("care-coordinator", "doctor-review", f"Case {n}: patient quote \"{quote}\". Nurse-ana confirmed. Active order: {a['value']} {a['citation']}.", d["id"])
     return d["id"]
 
 
@@ -112,7 +102,10 @@ c101, r101, o101, v101 = concern("101", "Can't wait for breakfast. Dr. Lee said 
 d101 = confirm(c101, r101, "Dr. Lee said it's fine now that my procedure moved", o101, "101")
 decide(c101, d101, v101, "diet", "regular", "Your procedure moved to Thursday, so you can eat normally today. - Dr. Lee", user="nurse-ana")   # refused
 time.sleep(2)
-decide(c101, d101, v101, "diet", "regular", "Your procedure moved to Thursday, so you can eat normally today. - Dr. Lee")
+# Dr. Lee speaks (dictated with Wispr Flow in the real thing); record-bot records advice, not a decision, and offers a draft
+say("dr-lee", "doctor-review", f"ADVICE Case {c101}: She can have a regular diet today, her procedure moved to Thursday.", d101)
+wait("doctor-review", lambda p: "Advice recorded" in p["message"] and f"Case {c101}" in p["message"], "advice recorded")
+decide(c101, d101, v101, "diet", "regular", "Your procedure moved to Thursday, so you can eat normally today. - Dr. Lee")   # she sends the decision herself
 wait("patient-101", lambda p: "you can eat normally today" in p["message"], "doctor's words")
 say("nurse-ana", "nurse-station", f"GIVEN Case {c101} anti-nausea (fictional) 18:10", r101)
 tray = f"T-101-D{c101}"
@@ -142,8 +135,8 @@ say("nurse-ana", "nurse-station", "READY 4W-103")
 say("nurse-ana", "nurse-station", "READY 4W-102")
 
 print("104: the nurse rejects")
-q = "I think I can skip the walk today"
-c104, r104, o104, v104 = concern("104", f"{q}.", q, "activity" if any(o["type"] == "activity" and o["status"] == "active" for o in api("/api/patients/104/chart")["orders"]) else "diet")
+q = "I think the salt limit is over for me today"
+c104, r104, o104, v104 = concern("104", f"{q}.", q, "diet")
 say("nurse-ben", "nurse-station", f"REJECT Case {c104} the patient was talking about yesterday", r104)
 
 print("A patient asks about someone else's case")

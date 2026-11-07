@@ -31,6 +31,7 @@ The parser is strict: `HANDOFF Case <n> open: <text>`, `CONFIRM Case <n>`, `ACCE
 | "lantern accept" | `ACCEPT Case ` | "eighteen" |
 | "lantern decide" | `DECIDE Case ` | "eighteen v3 diet equals regular" |
 | "lantern explain" | a new line and `EXPLAIN: ` | the explanation in Dr. Lee's own words |
+| "lantern advice" | `ADVICE Case ` | "eighteen she can have a regular diet today". Records advice only; record-bot offers a draft DECIDE for the doctor to check and send herself |
 | "lantern given" | `GIVEN Case ` | "seventeen pain relief 06:05" |
 | "lantern done" | `DONE ` | the task id |
 | "I-PASS" | a structured handoff template (Illness severity, Patient summary, Action list, Situation awareness, Synthesis) | |
@@ -44,7 +45,7 @@ Replacements: "at intake" → `@intake`, "at care coordinator" → `@care-coordi
 
 ## Set-up checklist (about 45 minutes)
 
-1. Install Wispr Flow from the hackathon link; turn on **Privacy Mode** and **Whisper Mode**.
+1. Wispr Flow is **already installed** on the demo MacBook; hold the **Fn** key to dictate into whichever app has focus. Still to do: turn on **Privacy Mode** and **Whisper Mode**.
 2. Add the snippets and dictionary above.
 3. Set the Mattermost style to concise.
 4. Dictate the rest of the work from now on: prompts, agent instructions, README, blog, voice-over script, commits, the #HowISwitch post. The Insights scorecard should show real use.

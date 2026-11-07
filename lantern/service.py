@@ -33,6 +33,7 @@ RE_REJECT = re.compile(r"^REJECT Case (\d+)\s+(\S.*)$", re.S)
 RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
+RE_ADVICE = re.compile(r"^ADVICE Case (\d+):?\s*(\S.*)$", re.S)
 RE_DONE = re.compile(r"^DONE (T-[\w-]+)\s*$")
 RE_DISCHARGE = re.compile(r"^DISCHARGE (\d+)\s*$")
 RE_READY = re.compile(r"^READY (4W-\d+)\s*$")
@@ -80,6 +81,9 @@ CREATE TABLE IF NOT EXISTS rooms(
   room TEXT PRIMARY KEY, patient_id TEXT, prev_ref TEXT, prev_discharged TEXT, prev_precautions TEXT, prev_diet TEXT, prev_notes TEXT);
 CREATE TABLE IF NOT EXISTS room_tasks(
   id TEXT PRIMARY KEY, room TEXT, kind TEXT, text TEXT, status TEXT, done_by TEXT, done_at TEXT, source_case INTEGER, ts REAL);
+CREATE TABLE IF NOT EXISTS tracking(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER, system TEXT, ref TEXT, url TEXT, summary TEXT, agent TEXT,
+  simulated INTEGER, ts REAL, UNIQUE(case_id, system, ref));
 CREATE TABLE IF NOT EXISTS audit(
   id INTEGER PRIMARY KEY AUTOINCREMENT, post_id TEXT, user_id TEXT, room TEXT,
   action TEXT, outcome TEXT, reason TEXT, ts REAL);
@@ -232,6 +236,23 @@ class Service:
         return {"lookup": n, "patient": patient_id, "entry": entry, "version": c["chart_version"],
                 "label": label, "value": value, "agent": agent,
                 "citation": f"[{entry} v{c['chart_version']} · lookup #{n} = {value}]"}
+
+    def record_tracking(self, agent, body):
+        """An agent reports that it created a tracked item (a Jira task, a Calendar event) for a case. Recorded once and
+        shown on the timeline; Lantern never creates the item itself here and never treats it as part of the record."""
+        user = self.roles.by_name(agent) if self.roles else None
+        c = self.case(int(body.get("case", 0)))
+        if user is None or user.role != "agent" or c is None or body.get("system") not in ("jira", "calendar"):
+            return {"ok": False}
+        with self.db:
+            cur = self.db.execute("INSERT OR IGNORE INTO tracking(case_id,system,ref,url,summary,agent,simulated,ts) VALUES(?,?,?,?,?,?,?,?)",
+                                  (c["id"], body["system"], str(body["ref"]), body.get("url", ""), body.get("summary", ""), agent,
+                                   1 if body.get("simulated") else 0, self.now()))
+            if cur.rowcount:
+                self._event(c["patient_id"], c["id"], "tracking", agent,
+                            f"{body['system']} {body['ref']}: {body.get('summary', '')}" + (" (simulated agent output)" if body.get("simulated") else ""),
+                            f"tracking {body['system']}")
+        return {"ok": True, "new": bool(cur.rowcount)}
 
     def forwarded_id(self, original_post_id):
         """Mattermost id of record-bot's forwarded message for a patient post (read-only; claim validation unchanged)."""
@@ -594,10 +615,55 @@ class Service:
             return
         if user.role == "agent":
             return self._check_agent_claims(post, user)
+        a = RE_ADVICE.match(post.message.strip())
+        if a:
+            return self._advice(post, user, a)
         m = RE_DECIDE.match(post.message.strip())
         if not m:
             return
         self._decide(post, user, m)
+
+    def _advice(self, post, user, m):
+        """ADVICE Case N: <free words>. A doctor's spoken or dictated advice, recorded as advice and never as a decision.
+        Record-bot offers a draft DECIDE when the words name a change to an active order; the doctor reviews it and sends it herself."""
+        number, text = int(m.group(1)), m.group(2).strip()
+        c = self.case(number)
+        if user.role != "doctor":
+            return self._audit(post, "ADVICE", "rejected", "only a doctor can record advice")
+        if c is None or not c["doctor_root"] or post.root_id != c["doctor_root"]:
+            return self._audit(post, "ADVICE", "rejected", "must be a reply in that case's doctor thread")
+        if c["state"] != CONFIRMED:
+            return self._audit(post, "ADVICE", "rejected", f"case is {c['state']}, not CONFIRMED_CONFLICT")
+        chart = self.chart(c["patient_id"])
+        with self.db:
+            self._event(c["patient_id"], number, "advice", user.username,
+                        f"dictated advice, not a decision: {text}", f"post {post.id}")
+        self._audit(post, "ADVICE", "accepted")
+        draft = self._draft_decide(chart, number, text)
+        body = (f"Advice recorded for Case {number} (dictated by {user.display}; it is not a decision and nothing was changed). "
+                f"@care-coordinator please prepare a DECIDE for {user.display} to review. Do not post a DECIDE yourself.")
+        if draft:
+            body += (f"\nDraft for {user.display} to check (nothing is applied until she sends it):\n```\n"
+                     f"DECIDE Case {number} v{chart['chart_version']} {draft[0]}={draft[1]}\nEXPLAIN: {text}\n```")
+        else:
+            body += "\nI could not read a change to an active order from these words, so there is no draft. Write the DECIDE yourself."
+        self._say(f"advice:{post.id}", DOCTOR, body, c["doctor_root"])
+
+    STOP = {"the", "a", "an", "is", "to", "be", "now", "can", "may", "she", "he", "they", "of", "order", "today", "for", "her", "his", "and", "on"}
+
+    def _draft_decide(self, chart, number, text):
+        """(topic, value) if the advice clearly names a new value for exactly one active order type, else None. Plain rules, no model."""
+        found = set()
+        for o in chart["orders"]:
+            if o["status"] != "active":
+                continue
+            t = o["type"]
+            for rx in (rf"\b{t}\b\s*(?:order\s*)?(?:(?:to|is|should be|can be|now)\b\s*|[=:]\s*)?([a-z]+)\b", rf"\b([a-z]+)\s+{t}\b"):
+                for mm in re.finditer(rx, text, re.I):
+                    w = mm.group(1).lower()
+                    if w not in self.STOP and w != t:
+                        found.add((t, w))
+        return next(iter(found)) if len(found) == 1 else None
 
     def _decide(self, post, user, m):
         number, version, otype, value, explanation = int(m.group(1)), int(m.group(2)), m.group(3), m.group(4), m.group(5)

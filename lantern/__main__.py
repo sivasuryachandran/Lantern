@@ -1,4 +1,4 @@
-"""python -m lantern run | timeline <patient> <role> [--html] | chart <patient> | lookup <patient> <entry> <agent> | clip <patient> <clip.json>"""
+"""python -m lantern run | timeline <patient> <role> [--html] | chart <patient> | lookup <patient> <entry> <agent> | clip <patient> <clip.json> | simagents [intake] [care-coordinator]"""
 import json
 import sys
 from pathlib import Path
@@ -22,6 +22,9 @@ def main(argv):
             role = argv[3] if len(argv) > 3 else "nurse"
             fn = timeline.render_html if "--html" in argv else timeline.render
             print(fn(svc.db, svc, pid, role))
+    elif cmd == "simagents":            # scripted stand-ins for intake and care-coordinator; needs MM_URL, MM_TEAM, LANTERN_TEST_PASSWORD
+        from . import simagents
+        simagents.main(tuple(argv[2:]) or ("intake", "care-coordinator"))
     elif cmd == "clip":                 # clip.json: {"clip_id": "c1", "segments": [{"t": 12.5, "text": "..."}]}
         _, svc = bot.build()
         data = json.loads(Path(argv[3]).read_text())

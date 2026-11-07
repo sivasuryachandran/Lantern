@@ -35,7 +35,9 @@ Each ward room (`4W-101` to `4W-104`) records who is there now, **who was there 
 | scheduler | Google Calendar follow-up event on a resolved case; opt-in overdue reminders for room tasks | built (Calendar unit-tested only; reminders tested with a fake clock) |
 | audit-log | every accepted, rejected and ignored command with the reason | built |
 
-Their code-level behaviors (`READY`, `DISCHARGE`, overdue reminders, the double-entry warning) are built as record-service commands. **Designed Switch agents (instructions written, none created in Console, none run) that would use them:** `housekeeping-coordinator`, `dietary-coordinator`, `pharmacy-liaison`, `bed-manager`, `discharge-planner`, `handoff-briefer`. See `docs/agents/`.
+Their code-level behaviors (`READY`, `DISCHARGE`, overdue reminders, the double-entry warning) are built as record-service commands. `lantern/simagents.py` also implements `intake` and `care-coordinator` as scripted stand-ins so every scenario above runs end to end without the real agents; the tracking ledger (`/api/tracking`, dashboard panel) records the Jira and Calendar items the care-coordinator reports. Dictated advice (`ADVICE Case N`) is built: recorded as advice, with a draft `DECIDE` the doctor must send herself.
+
+**Designed Switch agents (instructions written, none created in Console, none run) that would use them:** `housekeeping-coordinator`, `dietary-coordinator`, `pharmacy-liaison`, `bed-manager`, `discharge-planner`, `handoff-briefer`. See `docs/agents/`.
 
 ## Scenarios
 
