@@ -117,7 +117,7 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 92 tests, no network.
+- `python -m unittest discover -s tests`: 98 tests, no network.
 - `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
 - **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
   - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
@@ -143,6 +143,10 @@ After a handoff brief, the care-coordinator stand-in reports the Jira task and C
 ## Translation in both directions, read aloud
 
 A patient can write in their own language (patient 103 is configured as Spanish in `config/roles.yaml`). Record-bot asks the **interpreter** agent to translate: the English version appears in the nurse thread beside the patient's original words, and intake still quotes the original. When Dr. Lee decides, record-bot asks the interpreter to translate her words for the patient; the patient sees **Dr. Lee's exact words first, then the translation labelled as a translation**. The interpreter never posts to a patient room: it only reports a translation to `POST /translation`, and the service shows it. With `LANTERN_SPEAK=1` the agent also reads each translation aloud (macOS `say`, a Spanish voice for Spanish). The stand-in uses a small phrase table (no model) and refuses to guess an unknown sentence; the real interpreter agent would translate anything. A machine translation is not the doctor's own words, so the trust rule for patient rooms is now: a fixed template, the doctor's own words, or a labelled translation of them.
+
+## The scribe and the shift record
+
+Staff dictate free words into a case thread with Wispr Flow as `NOTE Case N: ...`. Lantern files it as a **dictated note** (never an order or a decision), and the **scribe** agent acknowledges it, and when a note sounds like a reminder it drafts the `REMIND` line for the person to check and send. After every accepted handoff the scribe posts a one-line update with a link to the **shift record**: `GET /api/report?format=html` (or `python -m lantern shiftreport`, or the "Shift record" link on the dashboard), a full chronological record of every patient's words, decisions, refusals, medicines, tasks, reminders, translations and tracked items, rebuilt from the database. Wispr Flow is a typing tool, so the scribe never listens to anything itself and is never in a patient room; the dictation is done by a person holding Fn.
 
 ## Nurse review
 

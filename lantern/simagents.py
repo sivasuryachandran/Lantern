@@ -59,6 +59,9 @@ class HttpTools:
         with urllib.request.urlopen(req, timeout=20) as r:
             return json.load(r)
 
+    def ward(self):
+        return self._get("/api/ward")
+
     def track(self, agent, body):
         req = urllib.request.Request(self.base + "/tracking", method="POST", data=json.dumps({"agent": agent, **body}).encode(),
                                      headers={"Content-Type": "application/json"})
@@ -87,6 +90,10 @@ class ServiceTools:
 
     def translate(self, agent, body):
         return self.svc.record_translation(agent, body)
+
+    def ward(self):
+        from . import api
+        return json.loads(api.route(self.svc, "/api/ward", {})[2])
 
 
 # ------------------------------------------------------------------ agents
@@ -257,6 +264,44 @@ class InterpreterAgent:
                 self._say_aloud(out, lang)            # the patient hears the doctor's words in their language
 
 
+class ScribeAgent:
+    """Records everything that is dictated and keeps the shift record current.
+
+    Staff dictate free words into a case thread with Wispr Flow (`NOTE Case 17: ...`). The scribe never listens to anything
+    itself and is never in a patient room: it reads the staff rooms and the read-only API. It files nothing on its own
+    authority (the service records the note) and cannot send a command for anyone, so when a note sounds like a reminder it
+    only drafts the `REMIND` line for the person to check and send."""
+    name = "scribe"
+    mention = "@scribe"
+    REPORT = "http://127.0.0.1:8099/api/report?format=html"
+
+    def __init__(self, chat, tools):
+        self.chat, self.tools = chat, tools
+
+    def handle(self, post):
+        if self.mention not in post.message:
+            return
+        m = re.match(r"Note recorded on Case (\d+)", post.message)
+        if m:
+            return self._filed(post, int(m.group(1)))
+        m = re.match(r"Case (\d+) follow-up accepted by", post.message)
+        if m:
+            w = self.tools.ward()
+            self.chat.post(post.room, f"Shift record updated after Case {m.group(1)}: {w['cases']} cases, {w['decisions']} decisions, "
+                           f"{w['meds_given']} medicines, {w['tasks_open']} room tasks open, {w['refused']} commands refused. "
+                           f"Full record: {self.REPORT}", post.root_id or post.id)
+
+    def _filed(self, post, n):
+        notes = [e for e in self.tools.case(n)["events"] if e["kind"] == "note"]
+        text = notes[-1]["text"].replace("dictated note: ", "", 1) if notes else ""
+        reply = f"Filed on the shift record (Case {n})."
+        when = re.search(r"\b(?:in\s+\d+\s*(?:min|minutes)|at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b", text, re.I)
+        if when and re.search(r"remind|check|follow", text, re.I):
+            task = re.sub(r"(?i)^.*?(?:remind (?:me )?(?:to )?|check )", "check ", text.split(when.group(0))[0] + text.split(when.group(0))[-1]).strip(" ,.")
+            reply += f" This sounds like a reminder. Draft for you to check and send:\n```\nREMIND Case {n} {when.group(0)} {task}\n```"
+        self.chat.post(post.room, reply, post.root_id or post.id)
+
+
 # ------------------------------------------------------------------ runner
 class Runner:
     """Polls the rooms an agent belongs to and hands record-bot's posts to the agent."""
@@ -285,7 +330,7 @@ class Runner:
             time.sleep(self.interval)
 
 
-def main(which=("intake", "care-coordinator", "interpreter")):
+def main(which=("intake", "care-coordinator", "interpreter", "scribe")):
     import threading
 
     from .chat import MattermostChat
@@ -305,6 +350,8 @@ def main(which=("intake", "care-coordinator", "interpreter")):
         chat = MattermostChat(url, login(name), team)
         if name == "intake":
             agent, rooms = IntakeAgent(chat, tools), [NURSE]
+        elif name == "scribe":
+            agent, rooms = ScribeAgent(chat, tools), [NURSE, DOCTOR]
         elif name == "interpreter":
             agent, rooms = InterpreterAgent(chat, tools, speak=os.environ.get("LANTERN_SPEAK") == "1"), [NURSE, DOCTOR]
         else:

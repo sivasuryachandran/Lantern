@@ -34,6 +34,7 @@ RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
 RE_ADVICE = re.compile(r"^ADVICE Case (\d+):?\s*(\S.*)$", re.S)
+RE_NOTE = re.compile(r"^NOTE Case (\d+):?\s*(\S.*)$", re.S)
 RE_REMIND = re.compile(r"^REMIND Case (\d+)\s+(.+)$", re.S)
 RE_WHEN = re.compile(r"^(?:in\s+(\d+)\s*m(?:in(?:ute)?s?)?|(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?)\s+(\S.*)$", re.I | re.S)
 RE_DONE = re.compile(r"^DONE (T-[\w-]+)\s*$")
@@ -437,7 +438,7 @@ class Service:
             return
         for rx, fn in ((RE_CONFIRM, self._confirm), (RE_REJECT, self._reject), (RE_GIVEN, self._given),
                        (RE_HANDOFF, self._handoff), (RE_ACCEPT, self._accept),
-                       (RE_DISCHARGE, self._discharge), (RE_READY, self._ready), (RE_REMIND, self._remind)):
+                       (RE_DISCHARGE, self._discharge), (RE_READY, self._ready), (RE_REMIND, self._remind), (RE_NOTE, self._note)):
             m = rx.match(msg)
             if m:
                 fn(post, user, m)
@@ -626,7 +627,7 @@ class Service:
             self._event(c["patient_id"], c["id"], "task", user.username,
                         f"accepted the follow-up; owner is now {user.username}", f"post {post.id}")
         self._audit(post, "ACCEPT", "accepted")
-        self._reply(post, "acceptack", f"Case {c['id']} follow-up accepted by {user.username}.")
+        self._reply(post, "acceptack", f"Case {c['id']} follow-up accepted by {user.username}. @scribe the shift record is up to date.")
         self._say_patient(f"owner:{c['id']}:{user.username}", c["patient_id"], "owner", owner=user.username)
         self._notify("on_accept", c["id"], user.username)
 
@@ -672,6 +673,9 @@ class Service:
         r = RE_REMIND.match(post.message.strip())
         if r and user.role in ("doctor", "nurse"):
             return self._remind(post, user, r)
+        nt = RE_NOTE.match(post.message.strip())
+        if nt and user.role in ("doctor", "nurse"):
+            return self._note(post, user, nt)
         a = RE_ADVICE.match(post.message.strip())
         if a:
             return self._advice(post, user, a)
@@ -923,6 +927,18 @@ class Service:
                     self.db.commit()
         self._reply(post, "remindack", f"Reminder set for {datetime.fromtimestamp(due):%H:%M} on Case {number}: {text} "
                     f"(owner {c['owner']}). @care-coordinator please add it to {c['owner']}'s calendar.")
+
+    def _note(self, post, user, m):
+        """NOTE Case N: free words. A dictated note for the record. It is filed as a note, never as an order or a decision."""
+        number, text = int(m.group(1)), m.group(2).strip()
+        c = self.case(number)
+        root = c["doctor_root"] if c and post.room == DOCTOR else (c["nurse_root"] if c else None)
+        if user.role not in ("nurse", "doctor") or c is None or not root or post.root_id != root:
+            return self._audit(post, "NOTE", "rejected", "only staff, as a reply in that case's thread")
+        with self.db:
+            self._event(c["patient_id"], number, "note", user.username, f"dictated note: {text}", f"post {post.id}")
+        self._audit(post, "NOTE", "accepted")
+        self._reply(post, "noteack", f"Note recorded on Case {number} (dictated by {user.display}; a note changes nothing). @scribe")
 
     def fire_reminders(self):
         """Post each due reminder into its case thread, once. Called from the bot loop."""

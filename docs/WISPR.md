@@ -36,6 +36,7 @@ The parser is strict: `HANDOFF Case <n> open: <text>`, `CONFIRM Case <n>`, `ACCE
 | "lantern decide" | `DECIDE Case ` | "eighteen v3 diet equals regular" |
 | "lantern explain" | a new line and `EXPLAIN: ` | the explanation in Dr. Lee's own words |
 | "lantern remind" | `REMIND Case ` | "seventeen in twenty minutes check she ate", or "seventeen eleven a m check she ate". Record-bot posts it back into the case thread when due and asks the care-coordinator to add it to the owner's calendar |
+| "lantern note" | `NOTE Case ` | "seventeen she ate half of it, remind me to check in twenty minutes". The scribe files it and drafts a `REMIND` line if it sounds like one |
 | "lantern advice" | `ADVICE Case ` | "eighteen she can have a regular diet today". Records advice only; record-bot offers a draft DECIDE for the doctor to check and send herself |
 | "lantern given" | `GIVEN Case ` | "seventeen pain relief 06:05" |
 | "lantern done" | `DONE ` | the task id |

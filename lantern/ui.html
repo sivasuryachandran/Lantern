@@ -62,6 +62,7 @@ footer{padding:0 22px 24px;color:var(--dim);font-size:12px}
   <div class="logo">LAN<b>T</b>ERN <span style="color:var(--dim);font-weight:400;letter-spacing:.05em">mission control</span></div>
   <div class="live"><span class="dot" id="dot"></span><span id="liveTxt">connecting</span></div>
   <button id="bigBtn" title="Presentation mode (P)">Present</button>
+  <a href="/api/report?format=html" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px">Shift record</a>
   <div class="banner">Fictional data, not for clinical use</div>
 </header>
 <main>
@@ -102,7 +103,7 @@ const H=KEY?{'X-Api-Key':KEY}:{};
 const get=p=>fetch(BASE+p,{headers:H}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hm=ts=>new Date(ts*1000).toLocaleTimeString([],{hour12:false});
-const LABEL={said:'SAID',draft:'DRAFT (unverified)',nurse:'NURSE CONFIRMED',chart:'SIMULATED CHART',decision:'CLINICIAN CONFIRMED',given:'GIVEN',service:'ROOM SERVICE',advice:'DOCTOR ADVICE (dictated)',tracking:'TRACKING',reminder:'REMINDER',translation:'TRANSLATION',task:'OWNER',handoff:'HANDOFF',agent:'AGENT CLAIM CHECK',fetch:'LOOKUP'};
+const LABEL={said:'SAID',draft:'DRAFT (unverified)',nurse:'NURSE CONFIRMED',chart:'SIMULATED CHART',decision:'CLINICIAN CONFIRMED',given:'GIVEN',service:'ROOM SERVICE',advice:'DOCTOR ADVICE (dictated)',tracking:'TRACKING',reminder:'REMINDER',translation:'TRANSLATION',note:'DICTATED NOTE',task:'OWNER',handoff:'HANDOFF',agent:'AGENT CLAIM CHECK',fetch:'LOOKUP'};
 let sel=null;
 $('bigBtn').onclick=()=>{document.body.classList.toggle('big');$('bigBtn').classList.toggle('on')};
 addEventListener('keydown',e=>{if(e.key==='p'||e.key==='P')$('bigBtn').click()});

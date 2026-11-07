@@ -6,7 +6,7 @@ LANTERN_TEST_PASSWORD and the record service running (scripts/start.sh).
 
   python scripts/ward_scenarios.py [--service http://127.0.0.1:8099]
 
-Scenarios: 101 diet (full loop, a refused nurse DECIDE, dictated doctor advice with a draft, a voice-set reminder, tray task closed by room service); 102 activity (confirmed, left open);
+Scenarios: 101 diet (full loop, a refused nurse DECIDE, dictated doctor advice with a draft, a dictated note filed by the scribe, a voice-set reminder, tray task closed by room service); 102 activity (confirmed, left open);
 103 activity in Spanish (translated both ways, decided, double medicine entry, discharge with part of the turnover done); 104 (nurse rejects); a patient asking
 about someone else's case (refused); shift change handing over three cases.
 """
@@ -108,6 +108,8 @@ wait("doctor-review", lambda p: "Advice recorded" in p["message"] and f"Case {c1
 decide(c101, d101, v101, "diet", "regular", "Your procedure moved to Thursday, so you can eat normally today. - Dr. Lee")   # she sends the decision herself
 wait("patient-101", lambda p: "you can eat normally today" in p["message"], "doctor's words")
 say("nurse-ana", "nurse-station", f"GIVEN Case {c101} anti-nausea (fictional) 18:10", r101)
+say("nurse-ana", "nurse-station", f"NOTE Case {c101}: She ate half of it and said the soup was too salty. Remind me to check again in 20 min.", r101)   # dictated with Wispr
+wait("nurse-station", lambda p: p["message"].startswith("Filed on the shift record") and "REMIND Case" in p["message"], "scribe drafts a reminder")
 say("nurse-ana", "nurse-station", f"REMIND Case {c101} in 1 min check she ate without nausea", r101)      # dictated with Wispr in the real thing
 wait("nurse-station", lambda p: p["message"].startswith(f"Reminder set for") and f"Case {c101}" in p["message"], "reminder set")
 tray = f"T-101-D{c101}"

@@ -11,6 +11,7 @@
   GET /api/rooms/<room>                        one room with its tasks (done and open)
   GET /api/tasks[?status=open|done&room=]      room-service tasks
   GET /api/ward                                summary counts for the whole ward
+  GET /api/report[?format=html]                the whole shift record, rebuilt from the database
   GET /api/translations                        translations the interpreter agent made
   GET /api/reminders                           reminders set with REMIND, open and sent
   GET /api/meds                                every medicine recorded as given
@@ -96,6 +97,11 @@ def route(svc, path, q):
             if one(key):
                 sql, args = sql + f" AND {col}=?", args + [one(key)]
         return ok(_rows(db.execute(sql + " ORDER BY id", args)))
+    if parts == ["report"]:
+        from . import shiftreport
+        if one("format") == "html":
+            return 200, "text/html; charset=utf-8", shiftreport.render_html(svc)
+        return 200, "text/markdown; charset=utf-8", shiftreport.render(svc)
     if parts == ["translations"]:
         return ok(_rows(db.execute("SELECT * FROM translations ORDER BY id")))
     if parts == ["reminders"]:

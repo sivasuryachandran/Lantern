@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lantern.chat import Post  # noqa: E402
-from lantern.scenario import confirm, decide, make_env  # noqa: E402
+from lantern.scenario import confirm, decide, make_env, open_case  # noqa: E402
 from lantern.simagents import CoordinatorAgent, IntakeAgent, Runner, ServiceTools  # noqa: E402
 from lantern.service import CONFIRMED  # noqa: E402
 
@@ -200,3 +200,67 @@ class TestInterpreter(unittest.TestCase):
             self.assertEqual(spoken[0][0], "say")
         finally:
             simagents.subprocess.Popen = real
+
+
+class TestScribeAndShiftRecord(unittest.TestCase):
+    def setUp(self):
+        from lantern.simagents import ScribeAgent
+        self.chat, self.roles, self.db, self.svc = make_env()
+        _, self.case = open_case(self.chat, self.svc)
+        self.case = confirm(self.chat, self.svc, self.case)
+        self.agent_chat = AgentChat(self.chat, "scribe")
+        self.scribe = ScribeAgent(self.agent_chat, ServiceTools(self.svc))
+
+    def note(self, text, user="nurse-ana", root=None):
+        root = self.case["nurse_root"] if root is None else root
+        self.svc.handle(self.chat.say(user, "nurse-station", f"NOTE Case {self.case['id']}: {text}", root))
+
+    def ack(self):
+        return as_post(next(x for x in reversed(self.chat.bot_posts("nurse-station")) if x["message"].startswith("Note recorded")))
+
+    def test_a_dictated_note_is_filed_as_a_note_and_changes_nothing(self):
+        self.note("She said the soup was too salty.")
+        self.assertIn("dictated note", [e["text"] for e in self.db.execute("SELECT text FROM events WHERE kind='note'")][0])
+        self.assertEqual(self.svc.chart("101")["chart_version"], 3)
+        self.assertEqual(self.svc.case(self.case["id"])["state"], CONFIRMED)
+        self.assertIn("a note changes nothing", self.ack().message)
+
+    def test_only_staff_in_the_case_thread_can_file_a_note(self):
+        self.note("x", user="service-sam")
+        self.note("x", root="")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM events WHERE kind='note'").fetchone()[0], 0)
+
+    def test_the_scribe_files_it_and_drafts_a_reminder_but_cannot_send_one(self):
+        self.note("She ate half of it. Remind me to check again in 20 min.")
+        self.scribe.handle(self.ack())
+        said = self.agent_chat.sent[-1].message
+        self.assertIn("Filed on the shift record", said)
+        self.assertIn(f"REMIND Case {self.case['id']} in 20 min", said)
+        self.svc.handle(self.agent_chat.sent[-1])                      # even if it posted the draft as a command...
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM reminders").fetchone()[0], 0)   # ...nothing happens
+
+    def test_a_note_without_a_time_gets_no_draft(self):
+        self.note("The patient is calm.")
+        self.scribe.handle(self.ack())
+        self.assertNotIn("REMIND", self.agent_chat.sent[-1].message)
+
+    def test_the_shift_record_holds_notes_decisions_and_refusals(self):
+        self.note("She asked for tea.")
+        decide(self.chat, self.svc, self.case, user="nurse-ana")       # refused
+        decide(self.chat, self.svc, self.case)
+        from lantern import shiftreport
+        text = shiftreport.render(self.svc)
+        for needle in ("# Lantern shift record", "DICTATED NOTE", "She asked for tea", "CLINICIAN CONFIRMED", "refused or ignored",
+                       "only a verified doctor can decide"):
+            self.assertIn(needle, text)
+        self.assertIn("<pre>", shiftreport.render_html(self.svc))
+
+    def test_the_scribe_updates_the_record_when_a_handoff_is_accepted(self):
+        decide(self.chat, self.svc, self.case)
+        n = self.case["id"]
+        self.svc.handle(self.chat.say("nurse-ana", "nurse-station", f"HANDOFF Case {n} open: confirm she ate", self.case["nurse_root"]))
+        self.svc.handle(self.chat.say("nurse-ben", "nurse-station", f"ACCEPT Case {n}", self.case["nurse_root"]))
+        acc = as_post(next(x for x in self.chat.bot_posts("nurse-station") if "follow-up accepted" in x["message"]))
+        self.assertIn("@scribe", acc.message)
+        self.scribe.handle(acc)
+        self.assertIn("api/report", self.agent_chat.sent[-1].message)

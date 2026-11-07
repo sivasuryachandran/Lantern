@@ -13,6 +13,7 @@ users:
   intake:           {role: agent, display: "intake"}
   care-coordinator: {role: agent, display: "care-coordinator"}
   interpreter:      {role: agent, display: "interpreter"}
+  scribe:           {role: agent, display: "scribe"}
   record-bot:       {role: bot, display: "record-bot"}
 
 # Switch room membership (the first boundary). No agent is ever in a patient room.
@@ -21,8 +22,8 @@ rooms:
   patient-102:   [patient-102, record-bot]
   patient-103:   [patient-103, record-bot]
   patient-104:   [patient-104, record-bot]
-  nurse-station: [nurse-ana, nurse-ben, intake, care-coordinator, interpreter, record-bot]
-  doctor-review: [dr-lee, nurse-ana, care-coordinator, interpreter, record-bot]
+  nurse-station: [nurse-ana, nurse-ben, intake, care-coordinator, interpreter, scribe, record-bot]
+  doctor-review: [dr-lee, nurse-ana, care-coordinator, interpreter, scribe, record-bot]
 
   # Ward feeds: staff-only rooms that record-bot writes to when something downstream needs to know. No agents, no patients.
   orders:        [dr-lee, nurse-ana, nurse-ben, record-bot]       # every simulated chart change
