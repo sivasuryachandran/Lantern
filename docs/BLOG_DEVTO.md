@@ -22,7 +22,7 @@ Her chart still says **NPO**: nothing by mouth.
 
 Nobody did anything wrong. A doctor said something reasonable, the chart hasn't caught up, and in twenty minutes a different nurse takes over. Ana can write a handoff, but writing a handoff is not the same as Ben *accepting* it.
 
-That gap is what Lantern is for. Named AI agents work inside the care team's chat through [Switch](https://docs.switchagents.ai). They notice when a patient's words don't match the chart, carry the question to the right people, and cite every chart fact with a receipt that code checks. **The agents never decide anything.** A nurse confirms what the patient meant, a doctor makes the call, and the next nurse explicitly accepts what is still open.
+That gap is what Lantern is for. Named AI agents work inside the care team's chat through [Switch](https://github.com/sandbox-quantum/switch). They notice when a patient's words don't match the chart, carry the question to the right people, and cite every chart fact with a receipt that code checks. **The agents never decide anything.** A nurse confirms what the patient meant, a doctor makes the call, and the next nurse explicitly accepts what is still open.
 
 *What was said. What was confirmed. Who owns what's next.*
 
@@ -81,9 +81,9 @@ Agents notice and coordinate. People confirm and decide. Code determines what co
 - **Mission control** is a read-only dashboard of 14 panels (patients, cases, evidence ledger, simulated chart versions, medicines, room tasks, translations, reminders, tracking, command audit). It cannot write to the chart.
 - **Work leaves the chat.** Follow-ups become a Jira task and a Calendar event, linked back to the thread. These are real items in our test workspace:
 
-![the real Jira board (KAN project) with the Lantern case and room-service tasks](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-jira-board.png)
+![the real Jira board (KAN project) with the Lantern case and room-service tasks; avatars blurred](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-jira-board-full.png)
 
-![the real Google Calendar with the three [Lantern] follow-up events](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-google-calendar.png)
+![the real Google Calendar with the three [Lantern] follow-up events; personal calendar list and avatar blurred](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-google-calendar-full.png)
 
 The dashboard lists both with their command audit:
 
@@ -91,7 +91,9 @@ The dashboard lists both with their command audit:
 
 ## Lantern × Wispr Flow
 
-Nurses don't have free hands, and Wispr Flow works in any text box, including Mattermost, with no integration code. Every staff command is a short, speakable line (`CONFIRM Case 17`, `HANDOFF Case 17 open: …`), and Whisper Mode fits a quiet 7:00 handoff. The hard rule is the same with voice: dictation is just a faster keyboard, and a spoken `DECIDE` from a nurse is refused exactly like a typed one, because the service checks *who posted*, not how they typed. In our recording the commands were typed by the driver; the voice design is documented in [docs/WISPR.md](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/docs/WISPR.md). [ADD: your Wispr Insights screenshot.]
+Nurses don't have free hands, and Wispr Flow works in any text box, including Mattermost, with no integration code. Every staff command is a short, speakable line (`CONFIRM Case 17`, `HANDOFF Case 17 open: …`), and Whisper Mode fits a quiet 7:00 handoff. The hard rule is the same with voice: dictation is just a faster keyboard, and a spoken `DECIDE` from a nurse is refused exactly like a typed one, because the service checks *who posted*, not how they typed. In our recording the commands were typed by the driver; the voice design is documented in [docs/WISPR.md](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/docs/WISPR.md). 
+
+![how Wispr Flow fits Lantern: dictate, Whisper Mode, Dictionary, Snippets](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-wispr-flow.png)
 
 ## Why Switch is the backbone
 
@@ -155,6 +157,6 @@ One shift, four patients, nine rooms. A doctor makes the decision and the next n
 
 ## Sources
 
-- [Switch documentation](https://docs.switchagents.ai)
+- [Switch](https://github.com/sandbox-quantum/switch)
 - The Joint Commission, *Sentinel Event Alert 58: Inadequate hand-off communication*
 - AHRQ PSNet summary of Sentinel Event Alert 58
