@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern Mission Control</title>
+<style>
+:root{--bg:#07090f;--panel:#0d1220;--line:#1c2540;--ink:#e6ecff;--dim:#7d89ad;--cyan:#38e1ff;--amber:#ffb84a;--green:#42f5a4;--red:#ff5c7a;--violet:#a98bff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#13204a 0,var(--bg) 60%) fixed;color:var(--ink);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+body.big{font-size:18px}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#07090fe6;backdrop-filter:blur(8px);z-index:5}
+.logo{font-weight:800;letter-spacing:.18em;font-size:15px}
+.logo b{color:var(--amber);text-shadow:0 0 14px var(--amber)}
+.live{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.4s infinite}
+.dot.off{background:var(--red);box-shadow:0 0 10px var(--red);animation:none}
+@keyframes pulse{50%{opacity:.25}}
+.banner{margin-left:auto;color:var(--amber);font-size:12px;border:1px solid #5a4318;background:#2a1f08;padding:4px 10px;border-radius:99px}
+button{background:#121a30;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit}
+button:hover{border-color:var(--cyan)}
+button.on{border-color:var(--cyan);color:var(--cyan)}
+main{display:grid;grid-template-columns:260px 1fr 340px;gap:14px;padding:14px 20px}
+@media(max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,#0f1630,var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px;overflow:hidden}
+h2{margin:0 0 10px;font-size:11px;letter-spacing:.2em;color:var(--dim);font-weight:700;text-transform:uppercase}
+.case{padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.case:hover,.case.sel{border-color:var(--cyan);box-shadow:0 0 18px #38e1ff22}
+.case .n{font-weight:700}
+.pill{display:inline-block;font-size:10px;letter-spacing:.08em;padding:2px 8px;border-radius:99px;border:1px solid;margin-left:6px}
+.s-POSSIBLE_DISCREPANCY{color:var(--amber);border-color:#6b4d16}
+.s-CONFIRMED_CONFLICT{color:var(--cyan);border-color:#17586a}
+.s-RESOLVED{color:var(--green);border-color:#146044}
+.s-HANDED_OFF{color:var(--violet);border-color:#46368a}
+.s-REJECTED{color:var(--red);border-color:#6b1d2d}
+.quote{color:var(--dim);font-size:12px;margin-top:4px}
+/* pipeline */
+svg{width:100%;height:auto;display:block}
+.node rect{fill:#0b1226;stroke:var(--line);stroke-width:1.5;transition:.5s}
+.node text{fill:var(--dim);font-size:13px;font-weight:600;text-anchor:middle;transition:.5s}
+.node small{font-size:10px}
+.node.done rect{stroke:var(--green);filter:drop-shadow(0 0 8px #42f5a455)}
+.node.done text{fill:var(--ink)}
+.node.now rect{stroke:var(--cyan);filter:drop-shadow(0 0 12px #38e1ffaa);animation:glow 1.2s infinite}
+.node.now text{fill:var(--cyan)}
+.node.bad rect{stroke:var(--red);filter:drop-shadow(0 0 10px #ff5c7a88)}
+.node.bad text{fill:var(--red)}
+@keyframes glow{50%{stroke-opacity:.35}}
+.wire{stroke:var(--line);stroke-width:2;fill:none}
+.wire.lit{stroke:var(--green);stroke-dasharray:6 6;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-12}}
+.sub{fill:#4f5b82!important;font-size:10px!important;font-weight:400!important}
+/* chart */
+.ord{display:flex;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px}
+.ord.old{opacity:.5;text-decoration:line-through}
+.ord .v{font-weight:800;color:var(--amber)}
+.ver{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.ver span{border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--dim)}
+.ver span.cur{color:var(--green);border-color:#146044}
+/* feeds */
+.row{display:grid;grid-template-columns:62px 130px 1fr;gap:8px;padding:6px 8px;border-bottom:1px solid #121a30;font-size:13px;animation:in .8s}
+@keyframes in{from{background:#38e1ff33;transform:translateX(-6px)}to{background:transparent}}
+.row .t{color:var(--dim);font-family:ui-monospace,Menlo,monospace;font-size:11px}
+.tag{font-size:10px;letter-spacing:.06em;font-weight:700}
+.k-said{color:var(--ink)}.k-nurse{color:var(--cyan)}.k-decision{color:var(--green)}.k-chart{color:var(--amber)}
+.k-agent{color:var(--violet)}.k-fetch{color:#8fd3ff}.k-handoff{color:#ffa6e8}.k-given{color:#9ff0c0}.k-task{color:#ffd48a}.k-draft{color:var(--dim)}
+.feed{max-height:330px;overflow:auto}
+.ev{display:grid;grid-template-columns:1fr auto;gap:8px;padding:7px 8px;border-bottom:1px solid #121a30;font-size:12.5px;animation:in .8s}
+.ok{color:var(--green)}.no{color:var(--red)}.ig{color:var(--dim)}
+.badge{font-weight:800}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.empty{color:var(--dim);padding:20px;text-align:center}
+.wide{grid-column:1/-1}
+footer{padding:8px 20px 24px;color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">LAN<b>T</b>ERN <span style="color:var(--dim);font-weight:400">mission control</span></div>
+  <div class="live"><span class="dot" id="dot"></span><span id="liveTxt">connecting</span></div>
+  <button id="bigBtn" title="Presentation mode (P)">Present</button>
+  <div class="banner">Fictional data, not for clinical use</div>
+</header>
+<main>
+  <section class="card"><h2>Cases</h2><div id="cases"><div class="empty">no cases yet</div></div></section>
+  <section style="display:grid;gap:14px;align-content:start">
+    <div class="card"><h2 id="pipeTitle">Case pipeline</h2><div id="pipe"></div></div>
+    <div class="card"><h2>Evidence ledger <span style="text-transform:none;letter-spacing:0;color:var(--dim)">- every fact an agent fetched, from the service's own log</span></h2><div class="feed" id="lookups"></div></div>
+    <div class="card"><h2>Case timeline <span style="text-transform:none;letter-spacing:0;color:var(--dim)">- said, confirmed, simulated chart, owner: never merged</span></h2><div class="feed" id="events"></div></div>
+  </section>
+  <section style="display:grid;gap:14px;align-content:start">
+    <div class="card"><h2 id="chartTitle">Simulated chart</h2><div id="chart"></div><div class="ver" id="vers"></div></div>
+    <div class="card"><h2>Command audit <span style="text-transform:none;letter-spacing:0;color:var(--dim)">- red = refused by code</span></h2><div class="feed" id="audit"></div></div>
+  </section>
+</main>
+<footer>Agents extract and route. Code decides. Only a verified doctor's DECIDE changes the simulated chart. Read-only view of <code>/api</code>.</footer>
+<script>
+const $=id=>document.getElementById(id);
+const KEY=new URLSearchParams(location.search).get('key');
+const H=KEY?{'X-Api-Key':KEY}:{};
+const get=p=>fetch(p,{headers:H}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hm=ts=>new Date(ts*1000).toLocaleTimeString([], {hour12:false});
+const LABEL={said:'SAID',draft:'DRAFT (unverified)',nurse:'NURSE CONFIRMED',chart:'SIMULATED CHART',decision:'CLINICIAN CONFIRMED',given:'GIVEN',task:'OWNER',handoff:'HANDOFF',agent:'AGENT CLAIM CHECK',fetch:'LOOKUP'};
+let sel=null, cur=null;
+$('bigBtn').onclick=()=>{document.body.classList.toggle('big');$('bigBtn').classList.toggle('on')};
+addEventListener('keydown',e=>{if(e.key==='p'||e.key==='P')$('bigBtn').click()});
+
+const STAGES=[['Patient says','patient room'],['intake','claim card'],['Nurse','CONFIRM'],['care-coordinator','cited facts'],['Doctor','DECIDE'],['Owner','handoff']];
+function stageState(d,lk){
+  const c=d.case, ev=d.events, st=c.state;
+  const has=k=>ev.some(e=>e.kind===k);
+  const reached=[true,true,st!=='POSSIBLE_DISCREPANCY'&&st!=='REJECTED',
+                 (has('agent')||lk.length>0)&&st!=='POSSIBLE_DISCREPANCY'&&st!=='REJECTED',
+                 d.decision.length>0, d.handoffs.some(h=>h.accepted_by)||st==='HANDED_OFF'];
+  const out=reached.map(r=>r?'done':'');
+  let nowIdx=reached.findIndex(r=>!r);
+  if(st==='REJECTED'){out[2]='bad';nowIdx=-1;for(let i=3;i<6;i++)out[i]='';}
+  else if(st==='RESOLVED'&&!d.handoffs.length){nowIdx=5;}
+  else if(st==='RESOLVED'&&d.handoffs.length&&!reached[5]){nowIdx=5;}
+  if(nowIdx>=0)out[nowIdx]='now';
+  return out;
+}
+function drawPipe(d,lk){
+  const s=stageState(d,lk), W=1000, gap=W/STAGES.length;
+  let g='';
+  for(let i=0;i<STAGES.length;i++){
+    const x=i*gap+gap/2;
+    if(i<STAGES.length-1) g+=`<path class="wire ${s[i]==='done'?'lit':''}" d="M${x+62} 60 L${x+gap-62} 60"/>`;
+    g+=`<g class="node ${s[i]}"><rect x="${x-62}" y="26" width="124" height="68" rx="14"/>
+      <text x="${x}" y="56">${esc(STAGES[i][0])}</text><text class="sub" x="${x}" y="76">${esc(STAGES[i][1])}</text></g>`;
+  }
+  const c=d.case;
+  const owner=(d.task[0]||{}).owner||c.owner||'';
+  g+=`<text x="500" y="130" style="fill:#7d89ad;font-size:13px;text-anchor:middle">Case ${c.id} · ${esc(c.state.replace('_',' '))}${owner?` · owner <tspan fill="#ffb84a">${esc(owner)}</tspan>`:''}</text>`;
+  $('pipe').innerHTML=`<svg viewBox="0 0 ${W} 145">${g}</svg>
+    <div class="quote">Patient said: <i>"${esc(c.quote)}"</i> · conflicts with <b>${esc(c.order_id)}</b> at chart v${c.chart_version}</div>`;
+}
+const seen={events:new Set(),audit:new Set(),lookups:new Set()};
+function feed(el,items,idFn,render,key,reset){
+  const box=$(el);
+  if(reset){box.innerHTML='';seen[key].clear();}
+  const first=!box.children.length;
+  let html='';
+  items.forEach(i=>{const id=idFn(i);const fresh=!seen[key].has(id);seen[key].add(id);html+=render(i,fresh||first)});
+  if(!items.length){box.innerHTML='<div class="empty">nothing yet</div>';return}
+  const atBottom=box.scrollTop+box.clientHeight>=box.scrollHeight-30;
+  box.innerHTML=html;
+  if(atBottom)box.scrollTop=box.scrollHeight;
+}
+async function tick(){
+  try{
+    const cases=await get('/api/cases');
+    $('dot').className='dot';$('liveTxt').textContent='live · '+new Date().toLocaleTimeString([], {hour12:false});
+    if(!cases.length){return}
+    if(sel===null||!cases.some(c=>c.id===sel))sel=cases[cases.length-1].id;
+    $('cases').innerHTML=cases.slice().reverse().map(c=>`<div class="case ${c.id===sel?'sel':''}" data-id="${c.id}">
+      <span class="n">Case ${c.id}</span><span class="pill s-${c.state}">${c.state.replace('_',' ')}</span>
+      <div class="quote">patient ${esc(c.patient_id)} · ${esc(c.topic)} · ${esc(c.owner||'')}</div></div>`).join('');
+    document.querySelectorAll('.case').forEach(el=>el.onclick=()=>{sel=+el.dataset.id;tick()});
+    const d=await get('/api/cases/'+sel), pid=d.case.patient_id;
+    const [chart,vers,lk,aud]=await Promise.all([get(`/api/patients/${pid}/chart`),get(`/api/patients/${pid}/chart/versions`),get('/api/lookups'),get('/api/audit?limit=40')]);
+    const mine=lk.filter(l=>l.patient_id===pid);
+    drawPipe(d,mine);
+    $('chartTitle').textContent=`Simulated chart · ${chart.display_name} · v${chart.chart_version}`;
+    $('chart').innerHTML=chart.orders.map(o=>`<div class="ord ${o.status!=='active'?'old':''}"><span>${esc(o.type)} order <small style="color:var(--dim)">${esc(o.status)}</small></span><span class="v">${esc(o.value)}</span></div>`).join('')
+      +chart.schedule.map(e=>`<div class="ord"><span>${esc(e.name)}</span><span class="v" style="color:var(--cyan)">${esc((e.scheduled_for||'').replace('T',' '))}</span></div>`).join('');
+    $('vers').innerHTML=vers.map(v=>`<span class="${v.version===chart.chart_version?'cur':''}">v${v.version} · ${esc(v.changed_by||'seed')}</span>`).join('');
+    const reset=cur!==sel; cur=sel;
+    feed('events',d.events,e=>e.id,(e,f)=>`<div class="row" style="${f?'':'animation:none'}"><span class="t">${hm(e.ts)}</span><span class="tag k-${e.kind}">${LABEL[e.kind]||e.kind}<br><span style="color:var(--dim);font-weight:400">${esc(e.actor)}</span></span><span>${esc(e.text)}</span></div>`,'events',reset);
+    const stale=l=>l.version<chart.chart_version;
+    feed('lookups',mine,l=>l.id,(l,f)=>`<div class="ev" style="${f?'':'animation:none'}"><span><b>lookup #${l.id}</b> · ${esc(l.agent)} read <b>${esc(l.entry)}</b> v${l.version}: ${esc(l.label)} = <b>${esc(l.value)}</b></span><span class="badge ${stale(l)?'no':'ok'}">${stale(l)?'⚠ STALE':'✓ current'}</span></div>`,'lookups',reset);
+    feed('audit',aud.slice().reverse(),a=>a.id,(a,f)=>`<div class="ev" style="${f?'':'animation:none'}"><span><b>${esc(a.action)}</b> by ${esc(a.user_id.slice(0,8))} in ${esc(a.room)}<br><span class="ig">${esc(a.reason||'')}</span></span><span class="badge ${a.outcome==='accepted'?'ok':a.outcome==='rejected'?'no':'ig'}">${a.outcome==='accepted'?'✓ ':a.outcome==='rejected'?'✕ ':''}${a.outcome}</span></div>`,'audit',false);
+  }catch(e){$('dot').className='dot off';$('liveTxt').textContent='offline ('+e.message+')'}
+}
+tick();setInterval(tick,1500);
+</script>
+</body>
+</html>

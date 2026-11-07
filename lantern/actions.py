@@ -2,7 +2,8 @@
 
   GET  /chart/<patient>/<entry>?agent=<name>   chart lookup tool: returns the entry and logs a numbered lookup
   GET  /forwarded/<original_post_id>?agent=<name>   returns the Mattermost id of record-bot's forwarded message
-  GET  /api/...  /healthz                      read-only backend over the database (see lantern/api.py)
+  GET  /  (or /ui)                             mission-control page over the read-only API (add ?key= if LANTERN_API_KEY is set)
+  GET  /api/...  /healthz                    read-only backend over the database (see lantern/api.py)
   POST /action                                 Mattermost interactive-button clicks (user_id is verified by Mattermost)
 
 Bound to 127.0.0.1 by default. Set LANTERN_BIND=0.0.0.0 if Mattermost (e.g. in Docker) must reach the button URL,
@@ -12,6 +13,7 @@ self-declared, so treat the lookup log as evidence of what was fetched on this m
 import json
 import os
 import threading
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -33,6 +35,8 @@ def serve(svc, host="127.0.0.1", port=8099):
         def do_GET(self):
             url = urlparse(self.path)
             parts = url.path.strip("/").split("/")
+            if parts in ([""], ["ui"]):          # mission-control page; it only calls the read-only /api
+                return self._send(200, (Path(__file__).parent / "ui.html").read_text(encoding="utf-8"), "text/html; charset=utf-8")
             if parts[0] in ("api", "healthz"):
                 api_key = os.environ.get("LANTERN_API_KEY")
                 if api_key and self.headers.get("X-Api-Key") != api_key:

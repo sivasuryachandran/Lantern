@@ -291,6 +291,13 @@ class TestBackendApi(unittest.TestCase):
         self.assertIn("CLINICIAN CONFIRMED", self.get("/api/timeline/101?role=doctor"))
         self.assertIn("<table>", self.get("/api/timeline/101?role=nurse&format=html"))
 
+    def test_dashboard_page_is_served_and_only_reads_the_api(self):
+        for path in ("/", "/ui"):
+            page = self.get(path)
+            self.assertIn("Lantern", page)
+            self.assertIn("Fictional data, not for clinical use", page)
+        self.assertNotIn("method:'POST'", self.get("/"))     # the page never writes
+
     def test_patient_role_and_unknowns_refused(self):
         import urllib.error
         import urllib.request

@@ -81,6 +81,8 @@ With Switch and its bundled Mattermost running, follow [docs/SWITCH_SETUP.md](do
 
 SQLite (`lantern.db`) holds the simulated charts (every version), cases, events, decisions, lookups and the audit log. `python scripts/seed_demo_db.py` loads four fictional patients and three earlier cases (14 to 16), so the first live case is still Case 17; `scripts/start.sh` does this automatically for a new database.
 
+**Mission-control dashboard:** with the bot running, open `http://127.0.0.1:8099/` (add `?key=<LANTERN_API_KEY>` if you set one). It shows the case pipeline lighting up stage by stage, the simulated chart with version history (old orders struck through), the evidence ledger (✓ current / ⚠ stale), the case timeline and the command audit with refusals in red. It polls the read-only API every 1.5 seconds; press **P** for presentation mode.
+
 `python -m lantern run` also serves a **read-only** backend on `127.0.0.1:8099` (set `LANTERN_BIND` to change, `LANTERN_API_KEY` to require an `X-Api-Key` header): `/healthz`, `/api/patients`, `/api/patients/<id>/chart` and `/chart/versions`, `/api/cases` and `/api/cases/<n>`, `/api/lookups`, `/api/audit`, and `/api/timeline/<id>?role=nurse|doctor[&format=html]`. Nothing in the API can change the record, and it refuses the patient role. Only patients 101 and 102 have chat accounts; 103 and 104 exist as backend data only.
 
 ## Optional pieces
@@ -98,7 +100,7 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 50 tests, no network.
+- `python -m unittest discover -s tests`: 51 tests, no network.
 - `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
 - **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
   - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
@@ -108,15 +110,16 @@ Calendar and Jira are called directly by the record service rather than as Switc
   - patient-102's account gets 403 reading patient-101. Switch refusing intake in a patient room has not been tested.
 - Not yet run: live buttons, and live Jira/Calendar calls (request shapes are unit-tested against a fake HTTP layer only).
 - Known limit: a crash in the middle of a command can drop that command's follow-up message; restarts never duplicate anything.
-- Still to add: the nurse review call (15 minutes, before Thursday) quoted here.
+- `scripts/demo_driver.py` and `scripts/live_e2e.py`, run again on Nov 6 against a local Mattermost with the full loop, the dashboard and the lookup tool; both the intake and care-coordinator accounts were scripted stand-ins in that run.
+- Not done: the nurse review. See below.
 
 ## Nurse review
 
-> *To be added after the call: a short quote from the nurse reviewer, their role, and what we changed because of it. The same quote closes the demo video.*
+We prepared the questions for a 15-minute review by a working nurse ([docs/NURSE_REVIEW.md](docs/NURSE_REVIEW.md)), but **the review was not done before submission**, so there is no clinician feedback or quote here. The workflow, wording and roles are our own assumptions and have not been validated by a nurse or doctor. Everything is fictional data, not for clinical use.
 
 ## Docs
 
-[Demo script](docs/DEMO_SCRIPT.md) · [Nurse review questions](docs/NURSE_REVIEW.md) · [Blog draft](docs/BLOG.md) · [#HowISwitch draft](docs/HOWISWITCH.md) · [Submission checklist](docs/SUBMISSION.md) · `scripts/start.sh` starts record-bot against the local Mattermost.
+[Recording guide](docs/RECORDING_GUIDE.md) · [Demo script](docs/DEMO_SCRIPT.md) · [Nurse review questions](docs/NURSE_REVIEW.md) · [Blog draft](docs/BLOG.md) · [#HowISwitch draft](docs/HOWISWITCH.md) · [Submission checklist](docs/SUBMISSION.md) · `scripts/start.sh` starts record-bot against the local Mattermost.
 
 A nurse or doctor can post `TIMELINE 101` in nurse-station or doctor-review to get the role-scoped timeline from record-bot; `python -m lantern timeline 101 nurse --html > timeline.html` makes a standalone page for the last demo scene.
 

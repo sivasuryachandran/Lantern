@@ -21,6 +21,6 @@ Title card: **No concern left in the dark.** Say "fictional data" on screen. Spe
 - Frame the receipts as good teamwork: "every claim comes with its source, like a good colleague's," not "we don't trust the agent."
 - Say once, early: "agents do the teamwork through Switch; plain code handles the patient edge and the checks."
 
-**Closing 10 seconds (required):** the nurse reviewer's quote on screen, with their role, for example "this is the conversation we have at every shift change." Use only a real quote, with permission. If the call hasn't happened, cut this card rather than invent one.
+**Closing 10 seconds:** end on the timeline with the on-screen line "Fictional data. Not clinical software. Not reviewed by a clinician yet." and the repo URL. There is no nurse-quote card because the nurse review was not done; never invent one.
 
 Only include Jira or Calendar if they worked on the first try.
