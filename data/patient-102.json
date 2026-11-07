@@ -1,6 +1,27 @@
-{"patient_id": "102", "display_name": "Patient 102 (fictional)",
+{
+ "patient_id": "102",
+ "display_name": "Patient 102 (fictional)",
  "chart_version": 1,
- "orders": [{"id": "ord-diet-2", "type": "diet", "value": "regular", "reason": "routine", "status": "active"}],
+ "orders": [
+  {
+   "id": "ord-diet-2",
+   "type": "diet",
+   "value": "regular",
+   "reason": "routine",
+   "status": "active"
+  },
+  {
+   "id": "ord-activity-1",
+   "type": "activity",
+   "value": "assist required",
+   "reason": "fall risk",
+   "status": "active"
+  }
+ ],
  "schedule": [],
  "medication_given": [],
- "care_team": {"doctor": "dr-lee", "nurse": "nurse-ana"}}
+ "care_team": {
+  "doctor": "dr-lee",
+  "nurse": "nurse-ana"
+ }
+}

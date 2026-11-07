@@ -151,6 +151,11 @@ class Service:
         self.db.commit()
         return pid
 
+    def _feed(self, key, room, text):
+        """Post to a ward feed room (orders, medication, room-service) if this ward has it; otherwise do nothing."""
+        if self.roles is not None and room in self.roles.rooms:
+            self._say(key, room, text)
+
     def _say_patient(self, key, patient_id, template, **kw):
         return self._say(key, PATIENT_ROOM.format(patient_id),
                          PATIENT_TEMPLATES[template].format(**kw))
@@ -463,6 +468,8 @@ class Service:
                         f"post {post.id}")
         self._audit(post, "GIVEN", "accepted")
         self._reply(post, "givenack", f"Recorded: {m.group(2)} given {m.group(3)} by {user.username}. No order was changed.")
+        self._feed(f"feed:med:{post.id}", "medication",
+                   f"Patient {c['patient_id']}: {m.group(2)} given {m.group(3)}, recorded by {user.display} (Case {c['id']}). No order was changed. Fictional data.")
 
     def _handoff(self, post, user, m):
         if user.shift != "outgoing":
@@ -620,6 +627,12 @@ class Service:
         self._say(f"case:{number}:doctor_ack", DOCTOR,
                   f"Case {number} resolved: simulated chart now v{d['to_version']} ({d['change']}). "
                   f"Explanation sent to the patient word for word.", c["doctor_root"])
+        self._feed(f"feed:orders:{number}", "orders",
+                   f"Patient {c['patient_id']}: {d['change']}. Simulated chart v{d['from_version']} -> v{d['to_version']}, "
+                   f"decided by {doctor.display} (Case {number}). Fictional data.")
+        if d["change"].startswith("diet"):
+            self._feed(f"feed:room-service:{number}", "room-service",
+                       f"Patient {c['patient_id']}: {d['change']} (simulated chart v{d['to_version']}). Update the tray. Fictional data.")
         self._notify("on_resolved", number, first)
 
     def _first_owner(self, number):

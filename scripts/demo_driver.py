@@ -3,6 +3,9 @@
   --real       intake and care-coordinator are the real Switch agents: this script only waits for them.
   --standins   (default if --real is absent) scripted accounts play the two agents. Say so in the video.
   --pause      wait for Enter before each step, so you control the timing on camera.
+  --preroll    before the take: patient 102 asks about walking alone, intake flags it against ord-activity-1, nurse-ana confirms,
+               the case is left open in doctor-review awaiting Dr. Lee, and nurse-ana records GIVEN 06:05. Then it stops.
+               Run the normal flow afterwards for patient 101 (that becomes the next case number).
 
 Needs MM_URL, MM_TEAM, LANTERN_TEST_PASSWORD, and the record service running (scripts/start.sh).
 The dashboard at http://127.0.0.1:8099/ shows everything live.
@@ -19,6 +22,7 @@ import urllib.request
 ap = argparse.ArgumentParser()
 ap.add_argument("--real", action="store_true")
 ap.add_argument("--pause", action="store_true")
+ap.add_argument("--preroll", action="store_true", help="v2 script: leave patient 102's activity case open and awaiting Dr. Lee, with a GIVEN at 06:05, then stop")
 ap.add_argument("--delay", type=float, default=2.0, help="seconds between steps when not pausing")
 ap.add_argument("--service", default=os.environ.get("LANTERN_SERVICE", "http://127.0.0.1:8099"))
 args = ap.parse_args()
@@ -69,8 +73,8 @@ def wait(room, pred, what, secs=WAIT):
     sys.exit(f"FAIL: timed out waiting for {what} in {room}")
 
 
-def lookup(entry):
-    with urllib.request.urlopen(f"{args.service}/chart/101/{entry}?agent=care-coordinator") as r:
+def lookup(entry, patient="101"):
+    with urllib.request.urlopen(f"{args.service}/chart/{patient}/{entry}?agent=care-coordinator") as r:
         return json.load(r)
 
 
@@ -81,6 +85,32 @@ def step(title):
     else:
         time.sleep(args.delay)
 
+
+T0 = int(time.time() * 1000) - 1000
+if args.preroll:
+    q2 = "The nurse said I can walk to the bathroom on my own now"
+    step("Pre-roll 1. Patient 102 asks about walking alone")
+    orig2 = say("patient-102", "patient-102", f"{q2}.")
+    fwd2 = wait("nurse-station", lambda p: orig2 in p["message"] and "@intake" in p["message"], "forward to intake")
+    step("Pre-roll 2. intake flags it" + ("" if args.real else " (STAND-IN)"))
+    if not args.real:
+        say("intake", "nurse-station", json.dumps({
+            "patient_id": "102", "topic": "activity", "status": "possible_discrepancy", "patient_says": "believes walking alone is allowed",
+            "quote": q2, "source": {"room": "patient-102", "original_post_id": orig2, "forwarded_post_id": fwd2["id"]},
+            "conflicts_with": {"order_id": "ord-activity-1", "chart_version": 1}}))
+    root2 = wait("nurse-station", lambda p: "possible discrepancy (unconfirmed)" in p["message"] and p["create_at"] > fwd2["create_at"], "case root")
+    case2 = re.match(r"Case (\d+)", root2["message"]).group(1)
+    step(f"Pre-roll 3. nurse-ana: CONFIRM Case {case2}")
+    say("nurse-ana", "nurse-station", f"CONFIRM Case {case2}", root2["id"])
+    droot2 = wait("doctor-review", lambda p: "nurse-confirmed conflict" in p["message"] and f"Case {case2}" in p["message"], "doctor thread")
+    if not args.real:
+        a = lookup("ord-activity-1", "102")
+        say("care-coordinator", "doctor-review", f"Case {case2}: patient quote \"{q2}\". Nurse-ana confirmed. Active activity order: {a['value']} {a['citation']}.", droot2["id"])
+    step(f"Pre-roll 4. nurse-ana records GIVEN 06:05 on Case {case2}")
+    say("nurse-ana", "nurse-station", f"GIVEN Case {case2} pain relief (fictional) 06:05", root2["id"])
+    wait("nurse-station", lambda p: "Recorded: pain relief" in p["message"], "GIVEN recorded")
+    print(f"\nPRE-ROLL DONE. Case {case2} (patient 102) is confirmed and left open, awaiting Dr. Lee. Do NOT decide it.")
+    sys.exit(0)
 
 quote = "Dr. Lee said it's fine now that my procedure moved"
 step("1. Patient 101 tells the bedside tablet what Dr. Lee said")

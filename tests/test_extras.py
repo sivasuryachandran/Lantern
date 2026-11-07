@@ -306,3 +306,49 @@ class TestBackendApi(unittest.TestCase):
             with self.assertRaises(urllib.error.HTTPError) as cm:
                 urllib.request.urlopen(self.base + path)
             self.assertEqual(cm.exception.code, code, path)
+
+
+class TestWardFeeds(unittest.TestCase):
+    """Orders, medication and room-service are write-only staff feeds; nothing there can change the record."""
+
+    def test_decision_reaches_orders_and_room_service_and_given_reaches_medication(self):
+        chat, roles, db, svc = make_env()
+        full_run(chat, svc)
+        orders = [p["message"] for p in chat.bot_posts("orders")]
+        self.assertEqual(len(orders), 1)
+        self.assertIn("v3 -> v4", orders[0])
+        self.assertIn("Dr. Lee", orders[0])
+        tray = [p["message"] for p in chat.bot_posts("room-service")]
+        self.assertEqual(len(tray), 1)
+        self.assertIn("diet", tray[0])
+        given = [p["message"] for p in chat.bot_posts("medication")]
+        self.assertEqual(len(given), 1)
+        self.assertIn("No order was changed", given[0])
+
+    def test_refused_decision_posts_nothing_to_the_feeds(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        decide(chat, svc, case, user="nurse-ana")          # a nurse cannot decide
+        for room in ("orders", "room-service", "medication"):
+            self.assertEqual(chat.bot_posts(room), [])
+
+    def test_replay_does_not_duplicate_feed_posts(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        post = chat.say("dr-lee", "doctor-review", f"DECIDE Case {case['id']} v3 diet=regular\nEXPLAIN: You can eat. - Dr. Lee",
+                        case["doctor_root"])
+        svc.handle(post)
+        svc.handle(post)                                  # the same post delivered again after a restart
+        self.assertEqual(len(chat.bot_posts("orders")), 1)
+        self.assertEqual(len(chat.bot_posts("room-service")), 1)
+
+    def test_feeds_have_no_agents_and_no_patients(self):
+        chat, roles, db, svc = make_env()
+        for room in ("orders", "medication", "room-service"):
+            for member in roles.rooms[room]:
+                self.assertIn(roles.by_name(member).role, ("nurse", "doctor", "bot"))
+        self.assertEqual(roles.agents_in_patient_rooms(), [])
+        self.assertEqual(sorted(r for r in roles.rooms if r.startswith("patient-")),
+                         ["patient-101", "patient-102", "patient-103", "patient-104"])

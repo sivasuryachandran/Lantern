@@ -10,7 +10,6 @@ from .roles import Roles
 from .service import Service, connect, seed
 
 ROOT = Path(__file__).resolve().parent.parent
-ROOMS = ["patient-101", "patient-102", "nurse-station", "doctor-review"]
 
 
 def readonly(db_path=None):
@@ -37,11 +36,12 @@ def run(interval=1.5):
     chat, svc = build()
     _, lock = actions.serve(svc, host=os.environ.get("LANTERN_BIND", "127.0.0.1"),
                             port=int(os.environ.get("LANTERN_ACTION_PORT", "8099")))
-    print("record-bot running; rooms:", ", ".join(ROOMS), "| lookup tool: /chart/<patient>/<entry>",
+    rooms = [r for r in svc.roles.rooms if r.startswith("patient-")] + ["nurse-station", "doctor-review"]   # feed rooms are write-only
+    print("record-bot running; rooms:", ", ".join(rooms), "| lookup tool: /chart/<patient>/<entry>",
           "| buttons:", bool(svc.action_url),
           "| integrations:", [type(i).__name__ for i in svc.integrations])
     while True:
-        for room in ROOMS:
+        for room in rooms:
             key = f"cursor:{room}"
             row = svc.db.execute("SELECT v FROM meta WHERE k=?", (key,)).fetchone()
             since = int(row["v"]) if row else int(time.time() * 1000) - 60_000
