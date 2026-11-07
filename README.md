@@ -34,6 +34,21 @@ Run it with no Mattermost at all:
 .venv/bin/python scripts/demo_offline.py
 ```
 
+## The ward's rooms
+
+All ten are private Switch/Mattermost rooms; membership is in `config/roles.yaml`.
+
+| Room | Who is in it | Purpose |
+| --- | --- | --- |
+| `patient-101` to `patient-104` | that patient, record-bot | the bedside tablet. **No agent is ever a member.** Patients 101 and 102 were used in the demo; 103 and 104 have charts and seeded history |
+| `nurse-station` | nurses, **intake**, **care-coordinator**, record-bot | flag, confirm, hand off |
+| `doctor-review` | Dr. Lee, Nurse Ana, **care-coordinator**, record-bot | evidence with receipts, then the decision |
+| `orders` | doctor, nurses, record-bot | write-only feed: every simulated chart change (who, which version) |
+| `medication` | nurses, doctor, record-bot | write-only feed: every `GIVEN`, kept apart from orders |
+| `room-service` | nurses, record-bot | write-only feed: a diet change that affects a tray |
+
+The three feeds are fed only by the record service, after a verified decision or a recorded `GIVEN`. Nothing posted there can change the record, and a room that is not in `config/roles.yaml` is simply skipped.
+
 ## Trust model
 
 Agents extract and route. A small deterministic **record service** (`lantern/service.py`) is the only thing that changes the simulated chart, says "resolved", or posts to a patient.
@@ -100,7 +115,7 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 51 tests, no network.
+- `python -m unittest discover -s tests`: 55 tests, no network.
 - `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
 - **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
   - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
