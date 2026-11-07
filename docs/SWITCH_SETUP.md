@@ -29,3 +29,13 @@ Rebuild this fresh after the event opens (Tue Nov 3, 10:31 AM PT); it takes abou
 6. Run `.venv/bin/python scripts/check_intake.py` to post the three casual phrasings from test 1 against the live agent.
 
 7. Lookup tool check: with the bot running, `curl -s "http://127.0.0.1:8099/chart/101/proc-1?agent=care-coordinator"` should return JSON with a `lookup` number, and an unknown agent name should return 403.
+
+## Which Mattermost team Console sees
+
+Switch Console lists the rooms of **one** Mattermost team on its local server (its bridge user is `switchadmin`). On the demo machine that team is `blast`, so the ten Lantern rooms were created there, with `switchadmin` added to each, and every script runs with `MM_TEAM=blast`:
+
+```bash
+export MM_URL=http://localhost:8065 MM_TEAM=blast LANTERN_TEST_PASSWORD=<throwaway password>
+scripts/reset_demo.sh
+```
+If your Console shows a different team, create the rooms in that team (or use `scripts/setup_mattermost.py` with `MM_TEAM` set to it) and add Console's bridge user to each room, or Console will not list them.
