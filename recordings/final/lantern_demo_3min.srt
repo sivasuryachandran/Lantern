@@ -1,0 +1,68 @@
+1
+00:00:00,600 --> 00:00:04,368
+Lantern. An AI care team built on Switch.
+
+2
+00:00:05,300 --> 00:00:26,084
+Every morning at seven, a nurse hands her patients to someone new, and that's when hospitals lose things. Not because people don't care, but because nobody can see who owns what's next. Lantern is a ward built on Switch: four patient rooms with no AI inside them, staff rooms where nurses, a doctor and AI agents work together, and feeds that only our service can write to.
+
+3
+00:00:27,184 --> 00:00:36,760
+It starts with something small. Patient 101 says she can't wait for breakfast, because Dr. Lee told her it's fine now. But her chart still says nothing by mouth.
+
+4
+00:00:37,860 --> 00:00:48,636
+The intake agent catches that. It doesn't diagnose anything. It quotes her word for word and flags a possible mismatch, and Lantern checks the facts it cites against the record before anyone acts.
+
+5
+00:00:49,736 --> 00:00:54,512
+Nurse Ana checks with her and confirms. With Wispr Flow she can do that by speaking.
+
+6
+00:00:55,612 --> 00:01:06,556
+The care-coordinator takes the case to the doctor's room and cites the chart. Every fact gets a receipt. The green tick means it matches the record we logged, not that it's medically right.
+
+7
+00:01:07,656 --> 00:01:15,264
+Here's the important part. Ana tries to change the order herself, and Lantern refuses. Nurses and agents can't change orders here.
+
+8
+00:01:16,364 --> 00:01:26,180
+Dr. Lee can. She decides, the chart moves from version three to version four, and the patient gets Dr. Lee's own words on her screen, not an AI's version of them.
+
+9
+00:01:27,280 --> 00:01:33,496
+And the whole ward sees it. Mission control updates from the Switch posts. It's read-only, so nothing can be changed from here.
+
+10
+00:01:34,596 --> 00:01:42,804
+Anything that needs following up doesn't stay buried in chat. It becomes a Calendar event, linked back to the thread that started it.
+
+11
+00:01:43,904 --> 00:01:52,640
+And the follow-ups are real. Here is the actual Calendar: Cases seventeen, eighteen and nineteen, each an event linked back to its thread.
+
+12
+00:01:53,744 --> 00:02:08,360
+And here is the real Jira board. Each case became a task, room-service work sits in To Do, and the finished ones are Done. Nobody typed these in. Lantern's hooks created each task and each event from the thread that started it.
+
+13
+00:02:10,384 --> 00:02:20,128
+And that decision turns into work somewhere else. A breakfast tray task opens for room service. A nurse can't close it. Only Sam from room service can, once it's delivered.
+
+14
+00:02:21,228 --> 00:02:29,628
+Patient 103 writes in Spanish. The interpreter's translation is read aloud (macOS Spanish voice).
+
+15
+00:02:30,228 --> 00:02:38,004
+Then it's seven o'clock. Ana hands over her cases. The coordinator briefs Ben on everything still open, and nothing changes hands until Ben says accept.
+
+16
+00:02:39,104 --> 00:02:42,320
+When he does, ownership moves everywhere at once.
+
+17
+00:02:43,420 --> 00:02:51,196
+That's Lantern. The agents notice things and carry them. People decide, and people accept. Switch keeps them all in the same room.
+

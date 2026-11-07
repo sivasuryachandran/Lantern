@@ -24,6 +24,7 @@ ap.add_argument("--service", default=os.environ.get("LANTERN_SERVICE", "http://1
 args = ap.parse_args()
 URL, TEAM, PW = os.environ["MM_URL"].rstrip("/"), os.environ.get("MM_TEAM", "lantern"), os.environ["LANTERN_TEST_PASSWORD"]
 WAIT = 150
+PACE = float(os.environ.get("LANTERN_PACE", "0"))   # seconds to pause before each human post, so a screen recording can follow
 
 
 def call(token, method, path, body=None):
@@ -51,6 +52,9 @@ def api(path):
 
 
 def say(user, room, text, root=""):
+    if PACE:
+        print(f"@@ {room} {user}", flush=True)       # marker for the recorder: which room to show
+        time.sleep(PACE)
     return call(tok[user], "POST", "/posts", {"channel_id": chan[room], "message": text, **({"root_id": root} if root else {})})["id"]
 
 
@@ -114,6 +118,8 @@ say("nurse-ana", "nurse-station", f"REMIND Case {c101} in 1 min check she ate wi
 wait("nurse-station", lambda p: p["message"].startswith(f"Reminder set for") and f"Case {c101}" in p["message"], "reminder set")
 tray = f"T-101-D{c101}"
 wait("room-service", lambda p: tray in p["message"], "tray task")
+say("nurse-ana", "room-service", f"DONE {tray}")      # refused: only room service closes a tray task
+time.sleep(2)
 say("service-sam", "room-service", f"DONE {tray}")
 
 print("102: activity, confirmed and left open")

@@ -1,0 +1,17 @@
+0:00 Intro card
+0:05 Hook: concept clip (5 s, labelled) + cards 1-2 + dashboard
+0:26 Patient 101 message
+0:37 Intake flag
+0:49 Ana CONFIRM + Wispr re-enactment bubble
+0:55 Coordinator + cards 3-4
+1:07 Refused DECIDE + card 5 (1 s hold)
+1:16 Dr. Lee advice/DECIDE v3→v4 + card 6 (1 s hold)
+1:27 Dashboard A split screen + card
+1:34 Calendar: reminder + dashboard Tracking row + card
+1:43 Real Google Calendar screenshot (3 [Lantern] events)
+1:53 Real Jira board screenshot (KAN)
+2:10 Tray task + card 7
+2:20 Spanish read-aloud (9 s, real-time)
+2:29 Handoff + Wispr whisper re-enactment + card 8 (1 s hold)
+2:38 Dashboard B: owner change (1 s hold)
+2:43 Closing dashboard + outro card

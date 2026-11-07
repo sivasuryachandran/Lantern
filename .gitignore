@@ -6,3 +6,6 @@ demo-video/out/
 film/ai/
 Flow-*.dmg
 .DS_Store
+recordings/*.webm
+recordings/_*/
+recordings/events_*.json
