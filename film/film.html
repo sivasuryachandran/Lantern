@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <title>Lantern concept film</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 /* Concept film. Every visual is a pure function of the time t (seconds): window.setT(t). No wall-clock animation. */
 :root{--bg:#0A101C;--panel:#111A2B;--line:#1E2A40;--ink:#E8EDF5;--muted:#9AA6B8;--amber:#F5B544;--green:#3DD68C;--cyan:#4CC9F0;--violet:#A78BFA;--red:#F87171}
 html,body{margin:0;background:#000}
-#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink)}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Manrope,system-ui,sans-serif;color:var(--ink)}
 .abs{position:absolute}
-.serif{font-family:"Instrument Serif",Georgia,serif}
+.serif{font-family:Fraunces,"Iowan Old Style",Georgia,serif;font-variation-settings:"opsz" 48;font-weight:380}
 .mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
 .scene{position:absolute;inset:0;opacity:0}
-.line{position:absolute;left:0;right:0;top:830px;text-align:center;font:400 84px/1.12 "Instrument Serif",Georgia,serif;letter-spacing:-.01em;padding:0 180px;opacity:0}
+.line{position:absolute;left:0;right:0;top:830px;text-align:center;font:380 70px/1.18 Fraunces,"Iowan Old Style",Georgia,serif;font-variation-settings:"opsz" 48;letter-spacing:.004em;padding:0 140px;opacity:0}
 .panel{background:var(--panel);border:2px solid var(--line);border-radius:28px}
-.chip{display:inline-block;font:700 24px/1 Inter,sans-serif;letter-spacing:.14em;padding:10px 20px;border-radius:99px;border:2px solid}
+.chip{display:inline-block;font:700 24px/1 Manrope,sans-serif;letter-spacing:.14em;padding:10px 20px;border-radius:99px;border:2px solid}
 .amber{color:var(--amber);border-color:#6b4d16}.green{color:var(--green);border-color:#146044}.red{color:var(--red);border-color:#6b1d2d}
 #grain{position:absolute;inset:-256px;opacity:.07;mix-blend-mode:screen;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>");pointer-events:none}
 #vig{position:absolute;inset:0;background:radial-gradient(closest-side at 50% 50%,rgba(0,0,0,0) 62%,rgba(0,0,0,.55));pointer-events:none}
@@ -100,8 +100,8 @@ html,body{margin:0;background:#000}
 
   <!-- scene 7 -->
   <div id="s7" class="scene">
-    <div id="word" class="abs serif" style="left:0;right:0;top:530px;text-align:center;font-size:150px;line-height:1;letter-spacing:.28em;padding-left:.28em">LANTERN</div>
-    <div id="tag" class="abs serif" style="left:0;right:0;top:700px;text-align:center;font-size:64px;font-style:italic;color:var(--amber)">No concern left in the dark.</div>
+    <div id="word" class="abs serif" style="left:0;right:0;top:530px;text-align:center;font-size:132px;line-height:1;letter-spacing:.26em;padding-left:.26em">LANTERN</div>
+    <div id="tag" class="abs serif" style="left:0;right:0;top:700px;text-align:center;font-size:58px;font-style:italic;color:var(--amber)">No concern left in the dark.</div>
     <div id="sub" class="abs" style="left:0;right:0;top:800px;text-align:center;font-size:34px;color:var(--muted)">What was said. What was confirmed. Who owns what's next.</div>
     <div id="fine" class="abs mono" style="left:0;right:0;top:980px;text-align:center;font-size:24px;color:var(--muted);letter-spacing:.06em">Concept film · fictional · built on Switch</div>
   </div>
