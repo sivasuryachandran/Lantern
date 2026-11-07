@@ -18,8 +18,8 @@ Agents extract and route. A small deterministic record service is the only thing
 
 ## What I'd tell the next builder
 
-The pattern isn't medical: *only a verified owner can change shared state, and agents route.* [One paragraph on what you learned, including anything that broke.]
+The pattern isn't medical: *only a verified owner can change shared state, and agents route.* What broke along the way, once real agents were involved: Switch's own message ids (`sw_...`) are not Mattermost ids, so intake could not cite the forwarded post until we gave it a lookup for the real one; Switch's "Working..." progress posts looked like unverified claims until the receipt check learned to ignore them; and care-coordinator answered in the channel instead of the case thread until its instructions said to reply in the thread. Each fix went into the agent's instructions or a small lookup endpoint, never into a weaker check.
 
 ## What it is not
 
-Not an AI medical record, not clinical software, not HIPAA-ready. It is a workflow demo with fictional data. [Quote from the nurse review.]
+Not an AI medical record, not clinical software, not HIPAA-ready. It is a workflow demo with fictional data.

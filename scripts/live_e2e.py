@@ -6,6 +6,7 @@ Needs MM_URL, MM_TEAM and LANTERN_TEST_PASSWORD (the password of the test accoun
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -44,11 +45,14 @@ def posts(room):
     return sorted(p["posts"].values(), key=lambda x: x["create_at"])
 
 
+T0 = int(time.time() * 1000)    # ignore old room history from earlier runs
+
+
 def wait(room, pred, what, secs=30):
     end = time.time() + secs
     while time.time() < end:
         for p in posts(room):
-            if pred(p):
+            if p["create_at"] >= T0 and pred(p):
                 return p
         time.sleep(1)
     sys.exit(f"FAIL: timed out waiting for {what} in {room}")
@@ -74,7 +78,7 @@ try:
     root = wait("nurse-station", bot_said("nurse-station", "possible discrepancy (unconfirmed)"), "case root")
     wait("patient-101", bot_said("", "Your care team is checking this"), "patient ack")
     print("case opened and patient acknowledged")
-    case = root["message"].split(":")[0].split()[-1]
+    case = re.match(r"Case (\d+)", root["message"]).group(1)
     say("nurse-ana", "nurse-station", f"CONFIRM Case {case}", root["id"])
     droot = wait("doctor-review", bot_said("", "nurse-confirmed conflict"), "doctor thread")
     print("escalated to doctor-review")
