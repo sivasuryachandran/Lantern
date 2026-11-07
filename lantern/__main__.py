@@ -24,7 +24,7 @@ def main(argv):
             print(fn(svc.db, svc, pid, role))
     elif cmd == "simagents":            # scripted stand-ins for intake and care-coordinator; needs MM_URL, MM_TEAM, LANTERN_TEST_PASSWORD
         from . import simagents
-        simagents.main(tuple(argv[2:]) or ("intake", "care-coordinator"))
+        simagents.main(tuple(argv[2:]) or ("intake", "care-coordinator", "interpreter"))
     elif cmd == "clip":                 # clip.json: {"clip_id": "c1", "segments": [{"t": 12.5, "text": "..."}]}
         _, svc = bot.build()
         data = json.loads(Path(argv[3]).read_text())

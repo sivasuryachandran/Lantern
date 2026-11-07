@@ -129,3 +129,74 @@ class TestSimulatedAgents(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestInterpreter(unittest.TestCase):
+    ES_IN = "Buenos días. El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo."
+
+    def setUp(self):
+        from lantern.simagents import InterpreterAgent
+        self.chat, self.roles, self.db, self.svc = make_env()
+        self.agent_chat = AgentChat(self.chat, "interpreter")
+        self.agent = InterpreterAgent(self.agent_chat, ServiceTools(self.svc))
+
+    def bot(self, room, startswith):
+        return next(as_post(x) for x in self.chat.bot_posts(room) if x["message"].startswith(startswith))
+
+    def test_a_spanish_patient_message_is_translated_for_the_nurse_and_the_original_is_kept(self):
+        self.svc.handle(self.chat.say("patient-103", "patient-103", self.ES_IN))
+        self.agent.handle(self.bot("nurse-station", "@interpreter Translate to English"))
+        said = [p["message"] for p in self.chat.bot_posts("nurse-station")]
+        tr = next(m for m in said if m.startswith("Translation (es→en)"))
+        self.assertIn("The physio said I can sit in the chair for lunch.", tr)
+        self.assertTrue(any("@intake" in m and "sentarme" in m for m in said))          # the original is still what intake sees
+        row = self.db.execute("SELECT * FROM translations").fetchone()
+        self.assertEqual((row["kind"], row["lang"], row["agent"]), ("patient_to_staff", "es", "interpreter"))
+
+    def test_an_english_patient_gets_no_translation_request(self):
+        self.svc.handle(self.chat.say("patient-101", "patient-101", "Can't wait for breakfast."))
+        self.assertFalse(any("@interpreter" in p["message"] for p in self.chat.bot_posts("nurse-station")))
+
+    def test_the_doctors_words_reach_a_spanish_patient_beside_the_original(self):
+        from lantern.scenario import claim_card
+        p = self.chat.say("patient-103", "patient-103", self.ES_IN)
+        self.svc.handle(p)
+        quote = "El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo"
+        chart = self.svc.chart("103")
+        order = next(o for o in chart["orders"] if o["type"] == "activity" and o["status"] == "active")
+        card = claim_card(self.svc, p.id, quote=quote, topic="activity", version=chart["chart_version"], order=order["id"])
+        self.svc.handle(self.chat.say("intake", "nurse-station", card))
+        case = self.db.execute("SELECT * FROM cases ORDER BY id DESC LIMIT 1").fetchone()
+        case = confirm(self.chat, self.svc, case)
+        decide(self.chat, self.svc, case, version=chart["chart_version"], text="Sitting in the chair for lunch is fine with someone beside you. - Dr. Lee")
+        # (decide() sends diet=regular; this test only needs the translation request, so use the request the service posted)
+        req = next((as_post(x) for x in self.chat.bot_posts("doctor-review") if x["message"].startswith("@interpreter Translate to es")), None)
+        self.assertIsNotNone(req)
+        self.agent.handle(req)
+        room = [x["message"] for x in self.chat.bot_posts("patient-103")]
+        self.assertTrue(any("Sitting in the chair" in m for m in room))                  # the doctor's own words, unchanged
+        tr = next(m for m in room if m.startswith("Translation (es)"))
+        self.assertIn("Sentarse en la silla para el almuerzo", tr)
+        self.assertIn("The words above are the original", tr)
+
+    def test_unknown_sentences_are_not_guessed_and_only_agents_can_report(self):
+        self.svc.handle(self.chat.say("patient-103", "patient-103", "Tengo una pregunta rara."))
+        self.agent.handle(self.bot("nurse-station", "@interpreter Translate to English"))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM translations").fetchone()[0], 0)
+        body = {"kind": "patient_to_staff", "post_id": "p1", "text": "x", "lang": "es"}
+        self.assertFalse(self.svc.record_translation("nurse-ana", body)["ok"])
+
+    def test_it_reads_aloud_only_when_asked(self):
+        from lantern import simagents
+        spoken = []
+        real = simagents.subprocess.Popen
+        simagents.subprocess.Popen = lambda cmd, *a, **k: spoken.append(cmd)
+        try:
+            quiet = simagents.InterpreterAgent(self.agent_chat, ServiceTools(self.svc), speak=False)
+            loud = simagents.InterpreterAgent(self.agent_chat, ServiceTools(self.svc), speak=True)
+            quiet._say_aloud("hola", "es")
+            self.assertEqual(spoken, [])
+            loud._say_aloud("hola", "es")
+            self.assertEqual(spoken[0][0], "say")
+        finally:
+            simagents.subprocess.Popen = real

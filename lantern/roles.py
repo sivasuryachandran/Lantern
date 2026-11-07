@@ -12,6 +12,7 @@ class User:
     display: str
     patient_id: str = ""
     shift: str = ""
+    language: str = "en"
 
 
 class Roles:
@@ -25,7 +26,7 @@ class Roles:
             if uid is None:
                 raise SystemExit(f"roles.yaml user '{name}' does not exist in the chat server")
             u = User(name, uid, spec["role"], spec.get("display", name),
-                     str(spec.get("patient_id", "")), spec.get("shift", ""))
+                     str(spec.get("patient_id", "")), spec.get("shift", ""), spec.get("language", "en"))
             self._by_id[uid] = u
             self._by_name[name] = u
 

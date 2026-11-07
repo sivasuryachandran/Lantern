@@ -6,8 +6,8 @@ LANTERN_TEST_PASSWORD and the record service running (scripts/start.sh).
 
   python scripts/ward_scenarios.py [--service http://127.0.0.1:8099]
 
-Scenarios: 101 diet (full loop, a refused nurse DECIDE, dictated doctor advice with a draft, tray task closed by room service); 102 activity (confirmed, left open);
-103 activity (decided, double medicine entry, discharge with part of the turnover done); 104 (nurse rejects); a patient asking
+Scenarios: 101 diet (full loop, a refused nurse DECIDE, dictated doctor advice with a draft, a voice-set reminder, tray task closed by room service); 102 activity (confirmed, left open);
+103 activity in Spanish (translated both ways, decided, double medicine entry, discharge with part of the turnover done); 104 (nurse rejects); a patient asking
 about someone else's case (refused); shift change handing over three cases.
 """
 import argparse
@@ -108,6 +108,8 @@ wait("doctor-review", lambda p: "Advice recorded" in p["message"] and f"Case {c1
 decide(c101, d101, v101, "diet", "regular", "Your procedure moved to Thursday, so you can eat normally today. - Dr. Lee")   # she sends the decision herself
 wait("patient-101", lambda p: "you can eat normally today" in p["message"], "doctor's words")
 say("nurse-ana", "nurse-station", f"GIVEN Case {c101} anti-nausea (fictional) 18:10", r101)
+say("nurse-ana", "nurse-station", f"REMIND Case {c101} in 1 min check she ate without nausea", r101)      # dictated with Wispr in the real thing
+wait("nurse-station", lambda p: p["message"].startswith(f"Reminder set for") and f"Case {c101}" in p["message"], "reminder set")
 tray = f"T-101-D{c101}"
 wait("room-service", lambda p: tray in p["message"], "tray task")
 say("service-sam", "room-service", f"DONE {tray}")
@@ -119,11 +121,13 @@ confirm(c102, r102, q, o102, "102")
 say("nurse-ana", "nurse-station", f"GIVEN Case {c102} pain relief (fictional) 06:05", r102)
 
 print("103: activity decided, a double medicine entry, discharge")
-q = "The physio said I can sit in the chair for lunch"
-c103, r103, o103, v103 = concern("103", f"Good morning. {q}.", q, "activity")
+q = "El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo"     # patient 103 writes in Spanish
+c103, r103, o103, v103 = concern("103", f"Buenos días. {q}.", q, "activity")
+wait("nurse-station", lambda p: p["message"].startswith("Translation (es→en)") and "sit in the chair" in p["message"], "translation for the nurse")
 d103 = confirm(c103, r103, q, o103, "103")
 decide(c103, d103, v103, "activity", "chair", "Sitting in the chair for lunch is fine with someone beside you. - Dr. Lee")
 wait("patient-103", lambda p: "Sitting in the chair" in p["message"], "doctor's words")
+wait("patient-103", lambda p: p["message"].startswith("Translation (es)") and "Sentarse en la silla" in p["message"], "translation for the patient")
 for t in ("08:00", "12:10"):
     say("nurse-ana", "nurse-station", f"GIVEN Case {c103} acetaminophen (fictional) {t}", r103)
 time.sleep(2)

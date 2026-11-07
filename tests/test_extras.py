@@ -538,3 +538,73 @@ class TestDictatedAdvice(unittest.TestCase):
         svc.handle(post)
         svc.handle(post)
         self.assertEqual(len([p for p in chat.bot_posts("doctor-review") if "Advice recorded" in p["message"]]), 1)
+
+
+class TestVoiceReminders(unittest.TestCase):
+    def setUp(self):
+        import time as _t
+        self.time = _t
+        self.chat, self.roles, self.db, self.svc = make_env()
+        _, self.case = open_case(self.chat, self.svc)
+        self.case = confirm(self.chat, self.svc, self.case)
+
+    def remind(self, text, user="nurse-ana", room="nurse-station", root=None):
+        root = self.case["nurse_root"] if root is None else root
+        self.svc.handle(self.chat.say(user, room, f"REMIND Case {self.case['id']} {text}", root))
+
+    def test_a_nurse_sets_a_reminder_that_is_posted_back_once_when_due(self):
+        self.remind("in 20 min check she ate without nausea")
+        r = self.db.execute("SELECT * FROM reminders").fetchone()
+        self.assertEqual(r["status"], "open")
+        ack = self.chat.bot_posts("nurse-station")[-1]["message"]
+        self.assertIn("Reminder set for", ack)
+        self.assertIn("@care-coordinator", ack)
+        self.assertEqual(self.svc.fire_reminders(), 0)                       # not due yet
+        self.svc.now = lambda: self.time.time() + 25 * 60
+        self.assertEqual(self.svc.fire_reminders(), 1)
+        self.assertEqual(self.svc.fire_reminders(), 0)                       # once only
+        due = [p["message"] for p in self.chat.bot_posts("nurse-station") if p["message"].startswith("Reminder due")]
+        self.assertEqual(len(due), 1)
+        self.assertIn("check she ate", due[0])
+        self.assertIn("reminder", [e["kind"] for e in self.db.execute("SELECT kind FROM events")])
+
+    def test_times_of_day_are_understood(self):
+        for text in ("11:00 a", "9am b", "2:30 pm c"):
+            self.remind(text)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM reminders").fetchone()[0], 3)
+        hours = sorted({self.time.localtime(r["due_ts"]).tm_hour for r in self.db.execute("SELECT due_ts FROM reminders")})
+        self.assertEqual(hours, [9, 11, 14])
+
+    def test_only_staff_in_the_case_thread_with_a_real_time_can_set_one(self):
+        self.remind("in 5 min x", user="service-sam")
+        self.remind("in 5 min x", root="")                                    # not the case thread
+        self.remind("whenever x")                                             # no time
+        self.remind("27:99 x")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM reminders").fetchone()[0], 0)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM audit WHERE action='REMIND' AND outcome='rejected'").fetchone()[0], 3)
+
+    def test_the_calendar_hook_creates_one_event_per_reminder(self):
+        calls = []
+        cal = GoogleCalendar("tok", "care", http=lambda m, u, b=None, h=None: calls.append((m, u, b)) or {"id": "ev1"})
+        self.svc.integrations = [cal]
+        self.remind("in 10 min check she ate")
+        self.assertEqual(len([c for c in calls if "calendar" in c[1]]), 1)
+        self.assertIn("check she ate", calls[0][2]["summary"])
+
+    def test_the_care_coordinator_stand_in_adds_it_to_the_calendar_ledger_once(self):
+        from lantern.chat import Post
+        from lantern.simagents import CoordinatorAgent, ServiceTools
+        self.remind("in 10 min check she ate")
+        ack = next(p for p in self.chat.bot_posts("nurse-station") if p["message"].startswith("Reminder set for"))
+        post = Post(ack["id"], "nurse-station", "uid-record-bot", ack["message"], ack["root_id"])
+
+        class C:
+            sent = []
+
+            def post(self, room, message, root_id="", props=None):
+                self.sent.append(message)
+        n = str(self.case["id"])
+        agent = CoordinatorAgent(C(), ServiceTools(self.svc), {n: {"calendar": {"ref": "11:00", "summary": "Follow-up event"}}})
+        agent.handle(post)
+        agent.handle(post)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM tracking WHERE system='calendar'").fetchone()[0], 1)

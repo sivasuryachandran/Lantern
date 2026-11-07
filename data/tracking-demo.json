@@ -1,7 +1,39 @@
-{"_note": "Demo only. The Jira tasks (project KAN, site lantern-demo) and Google Calendar events below were created by hand on Nov 7 and are reported by the stand-in care-coordinator as if it had made them. The dashboard marks them 'simulated'.",
- "17": {"jira": {"ref": "KAN-5", "url": "https://lantern-demo.atlassian.net/browse/KAN-5", "summary": "Case 17 (patient 101): confirm she ate without nausea"},
-        "calendar": {"ref": "Case 17 follow-up, 11:00", "url": "https://www.google.com/calendar/event?eid=dTIxaHZzcXJkajJvbmRndW1kamtlbHYwODggY2hhbmRyYW4uc2l2YXN1cnlhQG0", "summary": "[Lantern] Case 17: check patient 101 ate without nausea"}},
- "18": {"jira": {"ref": "KAN-4", "url": "https://lantern-demo.atlassian.net/browse/KAN-4", "summary": "Case 18 (patient 102): walking alone vs assist required, awaiting Dr. Lee"},
-        "calendar": {"ref": "Case 18 decision due, 11:30", "url": "https://www.google.com/calendar/event?eid=dGE4ZmtqMjAxMWM4MmxyNzE3ZTc1NWdscmMgY2hhbmRyYW4uc2l2YXN1cnlhQG0", "summary": "[Lantern] Case 18: Dr. Lee decision due for patient 102"}},
- "19": {"jira": {"ref": "KAN-6", "url": "https://lantern-demo.atlassian.net/browse/KAN-6", "summary": "Case 19 (patient 103): confirm comfortable in the chair; check double acetaminophen entry"},
-        "calendar": {"ref": "Case 19 comfort check, 12:00", "url": "https://www.google.com/calendar/event?eid=NWhuYWp1ZGZtNmpkbHNtNWdxcWtwZDcwOWsgY2hhbmRyYW4uc2l2YXN1cnlhQG0", "summary": "[Lantern] Case 19: check patient 103 comfort after the chair"}}}
+{
+ "_note": "Demo mapping: the Jira tasks (project KAN, site lantern-demo) and Google Calendar events that the care-coordinator reports for each case.",
+ "17": {
+  "jira": {
+   "ref": "KAN-5",
+   "url": "https://lantern-demo.atlassian.net/browse/KAN-5",
+   "summary": "Case 17 (patient 101): confirm she ate without nausea"
+  },
+  "calendar": {
+   "ref": "Case 17 follow-up, 11:00",
+   "url": "https://www.google.com/calendar/event?eid=dTIxaHZzcXJkajJvbmRndW1kamtlbHYwODggY2hhbmRyYW4uc2l2YXN1cnlhQG0",
+   "summary": "[Lantern] Case 17: check patient 101 ate without nausea"
+  }
+ },
+ "18": {
+  "jira": {
+   "ref": "KAN-4",
+   "url": "https://lantern-demo.atlassian.net/browse/KAN-4",
+   "summary": "Case 18 (patient 102): walking alone vs assist required, awaiting Dr. Lee"
+  },
+  "calendar": {
+   "ref": "Case 18 decision due, 11:30",
+   "url": "https://www.google.com/calendar/event?eid=dGE4ZmtqMjAxMWM4MmxyNzE3ZTc1NWdscmMgY2hhbmRyYW4uc2l2YXN1cnlhQG0",
+   "summary": "[Lantern] Case 18: Dr. Lee decision due for patient 102"
+  }
+ },
+ "19": {
+  "jira": {
+   "ref": "KAN-6",
+   "url": "https://lantern-demo.atlassian.net/browse/KAN-6",
+   "summary": "Case 19 (patient 103): confirm comfortable in the chair; check double acetaminophen entry"
+  },
+  "calendar": {
+   "ref": "Case 19 comfort check, 12:00",
+   "url": "https://www.google.com/calendar/event?eid=NWhuYWp1ZGZtNmpkbHNtNWdxcWtwZDcwOWsgY2hhbmRyYW4uc2l2YXN1cnlhQG0",
+   "summary": "[Lantern] Case 19: check patient 103 comfort after the chair"
+  }
+ }
+}

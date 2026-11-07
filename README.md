@@ -117,7 +117,7 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 82 tests, no network.
+- `python -m unittest discover -s tests`: 92 tests, no network.
 - `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
 - **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
   - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.
@@ -138,7 +138,11 @@ Voice is how a ward talks, so the commands are designed to be spoken: snippets s
 
 `lantern/simagents.py` implements `intake` and `care-coordinator` as real agents without a model: each logs in as its own Mattermost account, reads the rooms, answers only record-bot's @mentions, gets chart facts only through the logged lookup tool, and posts the same cards, summaries and handoff briefs the instructions in `docs/agents/` ask for. Run them with `python -m lantern simagents` (needs `MM_URL`, `MM_TEAM`, `LANTERN_TEST_PASSWORD`). They exist so the whole ward can be shown working when the real Switch agents are unreachable; say so on screen. `scripts/ward_scenarios.py` plays only the people and a full day of scenarios.
 
-After a handoff brief, the care-coordinator stand-in reports the Jira task and Calendar event for the case to `POST /tracking`; the service records it once, puts a TRACKING row on the timeline, and the dashboard's Tracking panel lists it, marked **simulated** (the tasks KAN-4 to KAN-6 and three events were made by hand and are mapped in `data/tracking-demo.json`). Doctors can also record dictated advice with `ADVICE Case N: ...`; record-bot logs it as advice, never as a decision, and offers a draft `DECIDE` for the doctor to check and send herself.
+After a handoff brief, the care-coordinator stand-in reports the Jira task and Calendar event for the case to `POST /tracking`; the service records it once, puts a TRACKING row on the timeline, and the dashboard's Tracking panel lists it, marked **simulated** (the tasks KAN-4 to KAN-6 and three events were made by hand and are mapped in `data/tracking-demo.json`). A nurse or doctor can set a follow-up by voice with `REMIND Case N in 20 min <what>` (or `11:00`, `9am`): Lantern records it, posts it back into the case thread when due, asks the care-coordinator to add it to the owner's calendar, and (with `GCAL_TOKEN` set) mirrors it to Google Calendar itself. Doctors can also record dictated advice with `ADVICE Case N: ...`; record-bot logs it as advice, never as a decision, and offers a draft `DECIDE` for the doctor to check and send herself.
+
+## Translation in both directions, read aloud
+
+A patient can write in their own language (patient 103 is configured as Spanish in `config/roles.yaml`). Record-bot asks the **interpreter** agent to translate: the English version appears in the nurse thread beside the patient's original words, and intake still quotes the original. When Dr. Lee decides, record-bot asks the interpreter to translate her words for the patient; the patient sees **Dr. Lee's exact words first, then the translation labelled as a translation**. The interpreter never posts to a patient room: it only reports a translation to `POST /translation`, and the service shows it. With `LANTERN_SPEAK=1` the agent also reads each translation aloud (macOS `say`, a Spanish voice for Spanish). The stand-in uses a small phrase table (no model) and refuses to guess an unknown sentence; the real interpreter agent would translate anything. A machine translation is not the doctor's own words, so the trust rule for patient rooms is now: a fixed template, the doctor's own words, or a labelled translation of them.
 
 ## Nurse review
 

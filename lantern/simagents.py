@@ -7,20 +7,23 @@ endpoint the real care-coordinator uses), so every citation is logged and checke
 
 Say so on screen when you use them: these are not Switch agents.
 
-  python -m lantern simagents            # both agents, until Ctrl-C
+  python -m lantern simagents            # all three agents, until Ctrl-C (LANTERN_SPEAK=1 reads translations aloud with macOS `say`)
   python -m lantern simagents intake     # just one
 """
 import json
 import os
 import re
+import subprocess
 import time
 import urllib.request
 from pathlib import Path
 
 NURSE, DOCTOR = "nurse-station", "doctor-review"
 TOPIC_WORDS = {
-    "diet": ("breakfast", "lunch", "dinner", "eat", "eating", "food", "tea", "coffee", "drink", "meal", "hungry", "salt"),
-    "activity": ("walk", "bathroom", "stand", "chair", "shower", "physio", "get up", "out of bed"),
+    "diet": ("breakfast", "lunch", "dinner", "eat", "eating", "food", "tea", "coffee", "drink", "meal", "hungry", "salt",
+             "desayun", "almuerzo", "comer", "comida", "cena", "beber"),
+    "activity": ("walk", "bathroom", "stand", "chair", "shower", "physio", "get up", "out of bed",
+                 "caminar", "baño", "silla", "sentar", "levantar", "ducha", "fisio"),
 }
 RE_FORWARD = re.compile(r"New message from Patient (\d+)[^\n]*?\(room patient-\d+\)\.\s*original_post_id: (\S+)\s*\nActive orders \(simulated chart v(\d+)\): (.+?)\n> (.+)$", re.S)
 RE_ORDER = re.compile(r"(ord-[\w-]+) (\w+)=([^;\n]+)")
@@ -50,6 +53,12 @@ class HttpTools:
         except Exception:
             return None
 
+    def translate(self, agent, body):
+        req = urllib.request.Request(self.base + "/translation", method="POST", data=json.dumps({"agent": agent, **body}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.load(r)
+
     def track(self, agent, body):
         req = urllib.request.Request(self.base + "/tracking", method="POST", data=json.dumps({"agent": agent, **body}).encode(),
                                      headers={"Content-Type": "application/json"})
@@ -75,6 +84,9 @@ class ServiceTools:
 
     def track(self, agent, body):
         return self.svc.record_tracking(agent, body)
+
+    def translate(self, agent, body):
+        return self.svc.record_translation(agent, body)
 
 
 # ------------------------------------------------------------------ agents
@@ -123,12 +135,25 @@ class CoordinatorAgent:
         self.tracking = tracking or {}              # case number -> {"jira": {...}, "calendar": {...}}
 
     def handle(self, post):
-        if self.mention not in post.message or post.root_id and post.room == DOCTOR:
+        if self.mention not in post.message:
+            return
+        if post.message.startswith("Reminder set for"):
+            return self._reminder(post)
+        if post.root_id and post.room == DOCTOR:
             return
         if post.room == DOCTOR and "nurse-confirmed conflict" in post.message:
             return self._summary(post)
         if post.room == NURSE and "HANDOFF pending for Case" in post.message:
             return self._handoff(post)
+
+    def _reminder(self, post):
+        """A reminder was set: add it to the owner's calendar (reported once to the tracking ledger)."""
+        n = int(RE_CASE.search(post.message).group(1))
+        item = (self.tracking.get(str(n)) or {}).get("calendar")
+        if item:
+            self.tools.track(self.name, {"case": n, "system": "calendar", "ref": item["ref"], "url": item.get("url", ""),
+                                          "summary": item["summary"], "simulated": True})
+            self.chat.post(post.room, f"Added to the calendar: {item['summary']}.", post.root_id or post.id)
 
     def _cite(self, patient, entry):
         r = self.tools.lookup(self.name, patient, entry)
@@ -169,6 +194,69 @@ class CoordinatorAgent:
         self.chat.post(NURSE, text, post.root_id or post.id)
 
 
+class InterpreterAgent:
+    """Translates between a patient and the staff, in both directions, and reads the result aloud when asked.
+
+    The stand-in works from a small phrase table (no model), so it covers the demo sentences only; the real agent would
+    translate anything. It can only report translations to the record service, which shows them beside the original
+    words. It never posts to a patient room itself."""
+    name = "interpreter"
+    mention = "@interpreter"
+    VOICES = {"es": "Flo (Spanish (Mexico))", "en": "Samantha"}
+    PAIRS = [   # (Spanish, English), sentence by sentence
+        ("Buenos días.", "Good morning."),
+        ("El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo.", "The physio said I can sit in the chair for lunch."),
+        ("Tengo muchas ganas de desayunar.", "I can't wait for breakfast."),
+        ("El doctor Lee dijo que ya puedo comer.", "Dr. Lee said I can eat now."),
+        ("Sentarse en la silla para el almuerzo está bien si alguien la acompaña. - Dr. Lee",
+         "Sitting in the chair for lunch is fine with someone beside you. - Dr. Lee"),
+        ("Su procedimiento se movió al jueves, así que hoy puede comer normalmente. - Dr. Lee",
+         "Your procedure moved to Thursday, so you can eat normally today. - Dr. Lee"),
+    ]
+
+    def __init__(self, chat, tools, speak=False):
+        self.chat, self.tools, self.speak = chat, tools, speak
+
+    def _translate(self, text, to_lang):
+        table = {es.lower(): en for es, en in self.PAIRS} if to_lang == "en" else {en.lower(): es for es, en in self.PAIRS}
+        whole = table.get(text.strip().lower())
+        if whole:
+            return whole
+        out = []
+        for sent in re.split(r"(?<=[.!?])\s+(?!-)", text.strip()):
+            hit = table.get(sent.strip().lower())
+            if hit is None:
+                return None                       # an unknown sentence: do not guess
+            out.append(hit)
+        return " ".join(out)
+
+    def _say_aloud(self, text, lang):
+        if not self.speak:
+            return
+        voice = os.environ.get(f"LANTERN_VOICE_{lang.upper()}", self.VOICES.get(lang, ""))
+        try:
+            subprocess.Popen(["say", "-v", voice, text] if voice else ["say", text])
+        except OSError:
+            pass                                   # no speech on this machine: the text is still shown
+
+    def handle(self, post):
+        if self.mention not in post.message:
+            return
+        m = re.match(r"@interpreter Translate to English \(patient (\d+) wrote in (\w+)\), post (\S+): (.+)$", post.message, re.S)
+        if m and post.room == NURSE:
+            pid, lang, post_id, text = m.groups()
+            en = self._translate(text, "en")
+            if en and self.tools.translate(self.name, {"kind": "patient_to_staff", "post_id": post_id, "text": en, "lang": lang}).get("ok"):
+                self._say_aloud(en, "en")             # the nurse hears what the patient said
+            return
+        m = re.match(r"@interpreter Translate to (\w+) for patient (\d+) \(Case (\d+)\);.*?: (.+)$", post.message, re.S)
+        if m and post.room == DOCTOR:
+            lang, pid, case, text = m.groups()
+            out = self._translate(text, lang)
+            if out and self.tools.translate(self.name, {"kind": "doctor_to_patient", "case": int(case), "text": out, "lang": lang}).get("ok"):
+                self._say_aloud(out, lang)            # the patient hears the doctor's words in their language
+
+
 # ------------------------------------------------------------------ runner
 class Runner:
     """Polls the rooms an agent belongs to and hands record-bot's posts to the agent."""
@@ -197,7 +285,7 @@ class Runner:
             time.sleep(self.interval)
 
 
-def main(which=("intake", "care-coordinator")):
+def main(which=("intake", "care-coordinator", "interpreter")):
     import threading
 
     from .chat import MattermostChat
@@ -217,6 +305,8 @@ def main(which=("intake", "care-coordinator")):
         chat = MattermostChat(url, login(name), team)
         if name == "intake":
             agent, rooms = IntakeAgent(chat, tools), [NURSE]
+        elif name == "interpreter":
+            agent, rooms = InterpreterAgent(chat, tools, speak=os.environ.get("LANTERN_SPEAK") == "1"), [NURSE, DOCTOR]
         else:
             agent, rooms = CoordinatorAgent(chat, tools, tracking), [NURSE, DOCTOR]
         t = threading.Thread(target=Runner(agent, chat, bot_id, rooms).run, daemon=True)

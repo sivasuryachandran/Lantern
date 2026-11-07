@@ -20,6 +20,10 @@ Two parts: how we **built** Lantern by voice, and how people **use** Lantern by 
 | Privacy Mode | **On.** Without it Wispr says dictation may be used to improve its models. A real ward would need an enterprise agreement; this demo uses fictional data only | do first |
 | Insights | The scorecard screenshot for the prize | at the end |
 
+## Dictating in another language
+
+A patient can dictate in their own language with Wispr Flow on the bedside tablet and Wispr types it into the room; Lantern's interpreter agent then translates it for the nurse. Say that on camera only if you actually dictate in Spanish.
+
 ## Snippets (what to say → what is inserted)
 
 The parser is strict: `HANDOFF Case <n> open: <text>`, `CONFIRM Case <n>`, `ACCEPT Case <n>`, `DECIDE Case <n> v<k> <topic>=<value>` then a new line `EXPLAIN: <text>`, `GIVEN Case <n> <what> <HH:MM>`, `DONE T-…`. Snippets supply the fixed part; you say the rest.
@@ -31,6 +35,7 @@ The parser is strict: `HANDOFF Case <n> open: <text>`, `CONFIRM Case <n>`, `ACCE
 | "lantern accept" | `ACCEPT Case ` | "eighteen" |
 | "lantern decide" | `DECIDE Case ` | "eighteen v3 diet equals regular" |
 | "lantern explain" | a new line and `EXPLAIN: ` | the explanation in Dr. Lee's own words |
+| "lantern remind" | `REMIND Case ` | "seventeen in twenty minutes check she ate", or "seventeen eleven a m check she ate". Record-bot posts it back into the case thread when due and asks the care-coordinator to add it to the owner's calendar |
 | "lantern advice" | `ADVICE Case ` | "eighteen she can have a regular diet today". Records advice only; record-bot offers a draft DECIDE for the doctor to check and send herself |
 | "lantern given" | `GIVEN Case ` | "seventeen pain relief 06:05" |
 | "lantern done" | `DONE ` | the task id |

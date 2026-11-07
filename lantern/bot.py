@@ -57,4 +57,5 @@ def run(interval=1.5):
                 svc.db.commit()
         with lock:
             svc.remind_overdue()
+            svc.fire_reminders()
         time.sleep(interval)

@@ -2,7 +2,7 @@
 from datetime import datetime
 
 LABELS = {"said": "SAID", "draft": "DRAFT (unverified)", "nurse": "NURSE CONFIRMED", "chart": "SIMULATED CHART",
-          "decision": "CLINICIAN CONFIRMED", "given": "GIVEN", "task": "OWNER", "handoff": "HANDOFF", "agent": "AGENT CLAIM CHECK", "fetch": "LOOKUP", "service": "ROOM SERVICE", "advice": "DOCTOR ADVICE (dictated)", "tracking": "TRACKING"}
+          "decision": "CLINICIAN CONFIRMED", "given": "GIVEN", "task": "OWNER", "handoff": "HANDOFF", "agent": "AGENT CLAIM CHECK", "fetch": "LOOKUP", "service": "ROOM SERVICE", "advice": "DOCTOR ADVICE (dictated)", "tracking": "TRACKING", "reminder": "REMINDER", "translation": "TRANSLATION"}
 # What each role may read: patients see their own words, confirmed answers and who owns the follow-up.
 VISIBLE = {"patient": {"said", "decision", "task"},
            "nurse": set(LABELS), "doctor": set(LABELS)}

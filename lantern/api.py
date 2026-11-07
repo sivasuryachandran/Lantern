@@ -10,6 +10,11 @@
   GET /api/rooms                               rooms, who is there now, the previous occupant, turnover progress
   GET /api/rooms/<room>                        one room with its tasks (done and open)
   GET /api/tasks[?status=open|done&room=]      room-service tasks
+  GET /api/ward                                summary counts for the whole ward
+  GET /api/translations                        translations the interpreter agent made
+  GET /api/reminders                           reminders set with REMIND, open and sent
+  GET /api/meds                                every medicine recorded as given
+  GET /api/activity[?limit=]                   latest events across all patients
   GET /api/tracking                            Jira tasks and Calendar events the agents reported creating
   GET /api/audit[?limit=]                      accepted/rejected commands with reasons
   GET /api/timeline/<id>?role=nurse|doctor[&format=html]
@@ -91,6 +96,30 @@ def route(svc, path, q):
             if one(key):
                 sql, args = sql + f" AND {col}=?", args + [one(key)]
         return ok(_rows(db.execute(sql + " ORDER BY id", args)))
+    if parts == ["translations"]:
+        return ok(_rows(db.execute("SELECT * FROM translations ORDER BY id")))
+    if parts == ["reminders"]:
+        return ok(_rows(db.execute("SELECT * FROM reminders ORDER BY due_ts")))
+    if parts == ["meds"]:
+        return ok(_rows(db.execute("SELECT patient_id, case_id, what, given_at, recorded_by, ts FROM meds ORDER BY ts")))
+    if parts == ["activity"]:
+        limit = int(one("limit") or 40)
+        return ok(_rows(db.execute("SELECT id, patient_id, case_id, kind, actor, text, ts FROM events ORDER BY id DESC LIMIT ?", (limit,))))
+    if parts == ["ward"]:
+        n = lambda sql, *a: db.execute(sql, a).fetchone()[0]
+        return ok({"patients": n("SELECT COUNT(DISTINCT patient_id) FROM chart_versions"),
+                   "cases": n("SELECT COUNT(*) FROM cases"),
+                   "awaiting_doctor": n("SELECT COUNT(*) FROM cases WHERE state='CONFIRMED_CONFLICT'"),
+                   "unconfirmed": n("SELECT COUNT(*) FROM cases WHERE state='POSSIBLE_DISCREPANCY'"),
+                   "resolved": n("SELECT COUNT(*) FROM cases WHERE state IN ('RESOLVED','HANDED_OFF')"),
+                   "rejected": n("SELECT COUNT(*) FROM cases WHERE state='REJECTED'"),
+                   "meds_given": n("SELECT COUNT(*) FROM meds"),
+                   "tasks_open": n("SELECT COUNT(*) FROM room_tasks WHERE status='open'"),
+                   "tasks_done": n("SELECT COUNT(*) FROM room_tasks WHERE status='done'"),
+                   "refused": n("SELECT COUNT(*) FROM audit WHERE outcome='rejected'"),
+                   "lookups": n("SELECT COUNT(*) FROM lookups"),
+                   "tracked": n("SELECT COUNT(*) FROM tracking"),
+                   "decisions": n("SELECT COUNT(*) FROM decisions")})
     if parts == ["tracking"]:
         return ok(_rows(db.execute("SELECT * FROM tracking ORDER BY id")))
     if parts == ["audit"]:

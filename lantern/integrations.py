@@ -94,6 +94,18 @@ class GoogleCalendar:
     def on_accept(self, case, owner, db):
         return None
 
+    def on_reminder(self, reminder, case, db):
+        """A reminder set with REMIND becomes a 15-minute event at its due time, once per reminder."""
+        key = f"calendar-reminder:{reminder['id']}"
+        if _once(db, case["id"], key):
+            return None
+        start = datetime.fromtimestamp(reminder["due_ts"], timezone.utc)
+        res = self.http("POST", f"https://www.googleapis.com/calendar/v3/calendars/{self.calendar_id}/events", {
+            "summary": f"Case {case['id']}: {reminder['text']}", "description": f"Fictional demo data. Owner: {case['owner']}.",
+            "start": {"dateTime": start.isoformat()}, "end": {"dateTime": (start + timedelta(minutes=15)).isoformat()}}, self.headers)
+        _remember(db, case["id"], key, res.get("id", ""))
+        return f"Calendar event created for the reminder on Case {case['id']}"
+
 
 def from_env(accounts=None):
     """Enable whichever integrations have credentials in the environment."""

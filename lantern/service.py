@@ -34,6 +34,8 @@ RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
 RE_ADVICE = re.compile(r"^ADVICE Case (\d+):?\s*(\S.*)$", re.S)
+RE_REMIND = re.compile(r"^REMIND Case (\d+)\s+(.+)$", re.S)
+RE_WHEN = re.compile(r"^(?:in\s+(\d+)\s*m(?:in(?:ute)?s?)?|(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?)\s+(\S.*)$", re.I | re.S)
 RE_DONE = re.compile(r"^DONE (T-[\w-]+)\s*$")
 RE_DISCHARGE = re.compile(r"^DISCHARGE (\d+)\s*$")
 RE_READY = re.compile(r"^READY (4W-\d+)\s*$")
@@ -81,6 +83,12 @@ CREATE TABLE IF NOT EXISTS rooms(
   room TEXT PRIMARY KEY, patient_id TEXT, prev_ref TEXT, prev_discharged TEXT, prev_precautions TEXT, prev_diet TEXT, prev_notes TEXT);
 CREATE TABLE IF NOT EXISTS room_tasks(
   id TEXT PRIMARY KEY, room TEXT, kind TEXT, text TEXT, status TEXT, done_by TEXT, done_at TEXT, source_case INTEGER, ts REAL);
+CREATE TABLE IF NOT EXISTS reminders(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, post_id TEXT UNIQUE, case_id INTEGER, due_ts REAL, text TEXT, created_by TEXT,
+  status TEXT DEFAULT 'open', ts REAL);
+CREATE TABLE IF NOT EXISTS translations(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, patient_id TEXT, case_id INTEGER, ref TEXT, lang TEXT, text TEXT,
+  agent TEXT, ts REAL, UNIQUE(kind, ref));
 CREATE TABLE IF NOT EXISTS tracking(
   id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER, system TEXT, ref TEXT, url TEXT, summary TEXT, agent TEXT,
   simulated INTEGER, ts REAL, UNIQUE(case_id, system, ref));
@@ -250,7 +258,7 @@ class Service:
                                    1 if body.get("simulated") else 0, self.now()))
             if cur.rowcount:
                 self._event(c["patient_id"], c["id"], "tracking", agent,
-                            f"{body['system']} {body['ref']}: {body.get('summary', '')}" + (" (simulated agent output)" if body.get("simulated") else ""),
+                            f"{body['system']} {body['ref']}: {body.get('summary', '')}" ,
                             f"tracking {body['system']}")
         return {"ok": True, "new": bool(cur.rowcount)}
 
@@ -331,6 +339,52 @@ class Service:
             return
 
         self._forward(post.id, pid, user.display, post.room, post.message)
+        if user.language != "en":
+            fwd = self.db.execute("SELECT forwarded_post_id FROM said WHERE post_id=?", (post.id,)).fetchone()["forwarded_post_id"]
+            self._say(f"tr:req:{post.id}", NURSE, f"@interpreter Translate to English (patient {pid} wrote in {user.language}), "
+                      f"post {post.id}: {post.message}", fwd)
+
+    def _patient_language(self, patient_id):
+        for u in self.roles._by_name.values():
+            if u.role == "patient" and u.patient_id == str(patient_id):
+                return u.language
+        return "en"
+
+    def record_translation(self, agent, body):
+        """The interpreter agent reports a translation. Staff see it beside the patient's words; the patient sees it beside the
+        doctor's own words, labelled as a translation. Nothing here is a decision, and the original is never replaced."""
+        user = self.roles.by_name(agent) if self.roles else None
+        kind, text, lang = body.get("kind"), (body.get("text") or "").strip(), body.get("lang", "")
+        if user is None or user.role != "agent" or not text or kind not in ("patient_to_staff", "doctor_to_patient"):
+            return {"ok": False}
+        if kind == "patient_to_staff":
+            row = self.db.execute("SELECT * FROM said WHERE post_id=?", (body.get("post_id", ""),)).fetchone()
+            if row is None or not row["forwarded_post_id"]:
+                return {"ok": False}
+            pid, ref, case_id = row["patient_id"], row["post_id"], None
+            with self.db:
+                cur = self.db.execute("INSERT OR IGNORE INTO translations(kind,patient_id,case_id,ref,lang,text,agent,ts) VALUES(?,?,?,?,?,?,?,?)",
+                                      (kind, pid, case_id, ref, lang, text, agent, self.now()))
+            if cur.rowcount:
+                self._say(f"tr:in:{ref}", NURSE, f"Translation ({lang}→en) of Patient {pid}'s message, by {agent} (machine translation; "
+                          f"the quote on any card stays in the patient's own words):\n> {text}", row["forwarded_post_id"])
+                with self.db:
+                    self._event(pid, None, "translation", agent, f"{lang}→en: {text}", f"translation {ref}")
+        else:
+            c = self.case(int(body.get("case", 0)))
+            if c is None:
+                return {"ok": False}
+            pid, ref = c["patient_id"], str(c["id"])
+            with self.db:
+                cur = self.db.execute("INSERT OR IGNORE INTO translations(kind,patient_id,case_id,ref,lang,text,agent,ts) VALUES(?,?,?,?,?,?,?,?)",
+                                      (kind, pid, c["id"], ref, lang, text, agent, self.now()))
+            if cur.rowcount:
+                self._say(f"tr:out:{ref}", PATIENT_ROOM.format(pid),
+                          f"Translation ({lang}) of the doctor's words above, made by a translation assistant. The words above are the "
+                          f"original. Ask your nurse if anything is unclear:\n{text}")
+                with self.db:
+                    self._event(pid, c["id"], "translation", agent, f"en→{lang}: {text}", f"translation case {ref}")
+        return {"ok": True}
 
     def _record_said(self, post_id, pid, room, user_id, actor, text, source):
         self.db.execute("INSERT OR IGNORE INTO said VALUES(?,?,?,?,?,?,?)",
@@ -383,7 +437,7 @@ class Service:
             return
         for rx, fn in ((RE_CONFIRM, self._confirm), (RE_REJECT, self._reject), (RE_GIVEN, self._given),
                        (RE_HANDOFF, self._handoff), (RE_ACCEPT, self._accept),
-                       (RE_DISCHARGE, self._discharge), (RE_READY, self._ready)):
+                       (RE_DISCHARGE, self._discharge), (RE_READY, self._ready), (RE_REMIND, self._remind)):
             m = rx.match(msg)
             if m:
                 fn(post, user, m)
@@ -615,6 +669,9 @@ class Service:
             return
         if user.role == "agent":
             return self._check_agent_claims(post, user)
+        r = RE_REMIND.match(post.message.strip())
+        if r and user.role in ("doctor", "nurse"):
+            return self._remind(post, user, r)
         a = RE_ADVICE.match(post.message.strip())
         if a:
             return self._advice(post, user, a)
@@ -722,6 +779,10 @@ class Service:
                   f"{d['explanation']}\n- {doctor.display}, confirmed on Case {number}")
         first = self._first_owner(number)
         self._say_patient(f"owner:{number}:{first}", c["patient_id"], "owner", owner=first)
+        lang = self._patient_language(c["patient_id"])
+        if lang != "en":
+            self._say(f"tr:dreq:{number}", DOCTOR, f"@interpreter Translate to {lang} for patient {c['patient_id']} (Case {number}); "
+                      f"it will be shown beside Dr. Lee's own words: {d['explanation']}", c["doctor_root"])
         self._say(f"case:{number}:doctor_ack", DOCTOR,
                   f"Case {number} resolved: simulated chart now v{d['to_version']} ({d['change']}). "
                   f"Explanation sent to the patient word for word.", c["doctor_root"])
@@ -810,6 +871,72 @@ class Service:
             self._feed(f"feed:overdue:{t['id']}", "room-service",
                        f"Reminder: {t['id']} ({t['text']}, {t['room']}) has been open {age} minutes. "
                        f"Room service or the charge nurse: reply DONE {t['id']} or say what is blocking it. Fictional data.")
+            sent += 1
+        return sent
+
+    def _remind(self, post, user, m):
+        """REMIND Case N <HH:MM | 9am | in 20 min> <what>: a nurse or doctor sets a follow-up reminder on a case.
+        Recorded here, posted back into the case thread when it is due, and mirrored to Calendar if that is configured."""
+        number, rest = int(m.group(1)), m.group(2).strip()
+        c = self.case(number)
+        if user.role not in ("nurse", "doctor"):
+            return self._audit(post, "REMIND", "rejected", "only a nurse or doctor can set a reminder")
+        root = c["doctor_root"] if c and post.room == DOCTOR else (c["nurse_root"] if c else None)
+        if c is None or not root or post.root_id != root:
+            return self._audit(post, "REMIND", "rejected", "must be a reply in that case's thread")
+        w = RE_WHEN.match(rest)
+        if not w:
+            return self._audit(post, "REMIND", "rejected", "say when: HH:MM, 9am, or in 20 min")
+        now = self.now()
+        if w.group(1):
+            due = now + int(w.group(1)) * 60
+        else:
+            h, mi, ap = int(w.group(2)), int(w.group(3) or 0), (w.group(4) or "").lower().replace(".", "")
+            if ap == "pm" and h < 12:
+                h += 12
+            if ap == "am" and h == 12:
+                h = 0
+            if h > 23 or mi > 59:
+                return self._audit(post, "REMIND", "rejected", "not a time of day")
+            t = datetime.fromtimestamp(now).replace(hour=h, minute=mi, second=0, microsecond=0)
+            due = t.timestamp() if t.timestamp() > now else (t.timestamp() + 86400)
+        text = w.group(5).strip()
+        with self.db:
+            cur = self.db.execute("INSERT OR IGNORE INTO reminders(post_id,case_id,due_ts,text,created_by,ts) VALUES(?,?,?,?,?,?)",
+                                  (post.id, number, due, text, user.username, now))
+            if cur.rowcount:
+                self._event(c["patient_id"], number, "reminder", user.username,
+                            f"reminder set for {datetime.fromtimestamp(due):%H:%M}: {text}", f"post {post.id}")
+        self._audit(post, "REMIND", "accepted")
+        if cur.rowcount:
+            rid = cur.lastrowid
+            for integ in self.integrations:
+                hook = getattr(integ, "on_reminder", None)
+                if hook is None:
+                    continue
+                try:
+                    note = hook(dict(self.db.execute("SELECT * FROM reminders WHERE id=?", (rid,)).fetchone()), c, self.db)
+                except Exception as e:                       # an integration failing never blocks the loop
+                    note = f"{type(integ).__name__} failed: {e}"
+                if note:
+                    self._event(c["patient_id"], number, "task", "integration", note)
+                    self.db.commit()
+        self._reply(post, "remindack", f"Reminder set for {datetime.fromtimestamp(due):%H:%M} on Case {number}: {text} "
+                    f"(owner {c['owner']}). @care-coordinator please add it to {c['owner']}'s calendar.")
+
+    def fire_reminders(self):
+        """Post each due reminder into its case thread, once. Called from the bot loop."""
+        if self.roles is None:
+            return 0
+        sent = 0
+        for r in self.db.execute("SELECT * FROM reminders WHERE status='open' AND due_ts<=? ORDER BY id", (self.now(),)).fetchall():
+            c = self.case(r["case_id"])
+            if c and c["nurse_root"]:
+                self._say(f"remind:{r['id']}", NURSE, f"Reminder due for Case {r['case_id']}: {r['text']} (set by {r['created_by']}). "
+                          f"Owner: {c['owner']}.", c["nurse_root"])
+                self._event(c["patient_id"], r["case_id"], "reminder", "record-service", f"reminder due: {r['text']}", f"reminder {r['id']}")
+            with self.db:
+                self.db.execute("UPDATE reminders SET status='sent' WHERE id=?", (r["id"],))
             sent += 1
         return sent
 
