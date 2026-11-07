@@ -8,7 +8,7 @@
   },
   "calendar": {
    "ref": "Case 17 follow-up, 11:00",
-   "url": "https://www.google.com/calendar/event?eid=dTIxaHZzcXJkajJvbmRndW1kamtlbHYwODggY2hhbmRyYW4uc2l2YXN1cnlhQG0",
+   "url": "https://calendar.google.com/calendar/",
    "summary": "[Lantern] Case 17: check patient 101 ate without nausea"
   }
  },
@@ -20,7 +20,7 @@
   },
   "calendar": {
    "ref": "Case 18 decision due, 11:30",
-   "url": "https://www.google.com/calendar/event?eid=dGE4ZmtqMjAxMWM4MmxyNzE3ZTc1NWdscmMgY2hhbmRyYW4uc2l2YXN1cnlhQG0",
+   "url": "https://calendar.google.com/calendar/",
    "summary": "[Lantern] Case 18: Dr. Lee decision due for patient 102"
   }
  },
@@ -32,7 +32,7 @@
   },
   "calendar": {
    "ref": "Case 19 comfort check, 12:00",
-   "url": "https://www.google.com/calendar/event?eid=NWhuYWp1ZGZtNmpkbHNtNWdxcWtwZDcwOWsgY2hhbmRyYW4uc2l2YXN1cnlhQG0",
+   "url": "https://calendar.google.com/calendar/",
    "summary": "[Lantern] Case 19: check patient 103 comfort after the chair"
   }
  }
