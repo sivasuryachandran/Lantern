@@ -130,6 +130,10 @@ Calendar and Jira are called directly by the record service rather than as Switc
 - `scripts/demo_driver.py` and `scripts/live_e2e.py`, run again on Nov 6 against a local Mattermost with the full loop, the dashboard and the lookup tool; both the intake and care-coordinator accounts were scripted stand-ins in that run.
 - Not done: the nurse review. See below.
 
+## Lantern × Wispr Flow
+
+Voice is how a ward talks, so the commands are designed to be spoken: snippets supply the exact prefix (`HANDOFF Case `), a dictionary turns "at intake" into `@intake`, and Whisper Mode fits a quiet night shift. The full feature table, the snippet and dictionary lists (so you can reproduce it), the Privacy Mode note and the status of each part are in [docs/WISPR.md](docs/WISPR.md). The Insights scorecard is `docs/wispr-scorecard.png` once it exists; nothing in that file is claimed as done before it is.
+
 ## Nurse review
 
 We prepared the questions for a 15-minute review by a working nurse ([docs/NURSE_REVIEW.md](docs/NURSE_REVIEW.md)), but **the review was not done before submission**, so there is no clinician feedback or quote here. The workflow, wording and roles are our own assumptions and have not been validated by a nurse or doctor. Everything is fictional data, not for clinical use.
