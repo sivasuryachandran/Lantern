@@ -98,7 +98,9 @@ footer{padding:8px 20px 24px;color:var(--dim);font-size:12px}
 const $=id=>document.getElementById(id);
 const KEY=new URLSearchParams(location.search).get('key');
 const H=KEY?{'X-Api-Key':KEY}:{};
-const get=p=>fetch(p,{headers:H}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+// Opened as a file or inside a preview frame (no http origin)? Talk to the local service directly.
+const BASE=location.protocol.startsWith('http')?'':(new URLSearchParams(location.search).get('api')||'http://127.0.0.1:8099');
+const get=p=>fetch(BASE+p,{headers:H}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hm=ts=>new Date(ts*1000).toLocaleTimeString([], {hour12:false});
 const LABEL={said:'SAID',draft:'DRAFT (unverified)',nurse:'NURSE CONFIRMED',chart:'SIMULATED CHART',decision:'CLINICIAN CONFIRMED',given:'GIVEN',task:'OWNER',handoff:'HANDOFF',agent:'AGENT CLAIM CHECK',fetch:'LOOKUP'};

@@ -29,8 +29,14 @@ def serve(svc, host="127.0.0.1", port=8099):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(out)))
+            if self.path.startswith(("/api", "/healthz")):      # read-only fictional data on localhost: lets ui.html work from a file
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Headers", "X-Api-Key")
             self.end_headers()
             self.wfile.write(out)
+
+        def do_OPTIONS(self):
+            self._send(204, "")
 
         def do_GET(self):
             url = urlparse(self.path)
