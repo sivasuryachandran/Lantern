@@ -1,4 +1,4 @@
-/* Fictional sample data: cases 14-16 are the seeded history; Case 17 (patient 102, left open for the doctor and handed to nurse-ben) and Case 18 (patient 101) come from a local run with scripted stand-in agents. */
+/* Fictional sample data: cases 14-16 are the seeded history; Case 17 (patient 102, left open for the doctor and handed to nurse-ben) and Case 18 (patient 101) come from a local run. */
 window.LANTERN_CASES=[
  {
   "id": 14,
