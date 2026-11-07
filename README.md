@@ -8,6 +8,16 @@ Built for the Flip the Switch hackathon (WeMakeDevs × DevTools Academy × Switc
 
 Every morning at seven a nurse hands her patients to someone new, and that is when things get lost: nobody can see who owns what's next. Lantern is a ward built on Switch. Patients talk to a bedside tablet. AI agents notice a mismatch between what a patient says and what the chart says, and carry it to the nurse and the doctor. **Only a verified doctor's decision changes the record**, and nothing changes hands until the incoming nurse accepts.
 
+## Links
+
+| What | Link |
+| --- | --- |
+| Demo video | https://youtu.be/QR7r84tyBlo |
+| Blog on Hashnode | https://sivasuryachandran.hashnode.dev/the-nurse-was-right-we-refused-her-anyway |
+| Blog on dev.to | https://dev.to/siva_surya_f555745c8bbca8/the-nurse-and-doctor-sent-the-same-message-only-one-changed-the-chart-3ad0 |
+| #HowISwitch post on X | https://x.com/siva_surya35077/status/2119108582230896946 |
+| Code | https://github.com/sivasuryachandran/Lantern |
+
 ## Watch the demo
 
 **YouTube: https://youtu.be/QR7r84tyBlo**
