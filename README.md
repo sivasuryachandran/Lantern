@@ -45,9 +45,11 @@ All ten are private Switch/Mattermost rooms; membership is in `config/roles.yaml
 | `doctor-review` | Dr. Lee, Nurse Ana, **care-coordinator**, record-bot | evidence with receipts, then the decision |
 | `orders` | doctor, nurses, record-bot | write-only feed: every simulated chart change (who, which version) |
 | `medication` | nurses, doctor, record-bot | write-only feed: every `GIVEN`, kept apart from orders |
-| `room-service` | nurses, record-bot | write-only feed: a diet change that affects a tray |
+| `room-service` | Sam and Rita (room service), nurses, record-bot | a diet change opens a tray task here; room service closes it with `DONE <task id>` (refused for anyone else) |
 
-The three feeds are fed only by the record service, after a verified decision or a recorded `GIVEN`. Nothing posted there can change the record, and a room that is not in `config/roles.yaml` is simply skipped.
+`orders` and `medication` are fed only by the record service, after a verified decision or a recorded `GIVEN`; nothing posted there can change the record. A room that is not in `config/roles.yaml` is simply skipped.
+
+`data/rooms.json` (fictional) also holds each ward room's **previous occupant** (reference, precautions, diet, notes) and that stay's **turnover checklist**, done or still open. See `GET /api/rooms`, `/api/tasks?status=open` and the dashboard's "Rooms & turnover" panel. The whole-ward scenarios, the internal agents, six designed (not yet created) Switch agents, and what is tracked in Jira, Calendar and docs are in [docs/HOSPITAL_SCENARIOS.md](docs/HOSPITAL_SCENARIOS.md), with built and designed kept apart.
 
 ## Trust model
 

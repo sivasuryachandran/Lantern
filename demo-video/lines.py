@@ -4,23 +4,17 @@ import os
 
 PROVIDER = os.environ.get("AGENT_PROVIDER", "").strip()
 AGENTS = f"{PROVIDER} agents" if PROVIDER else "coding agents"
-END = 178.0
+END = 180.0
 
 BEATS = [
-    (0.0, "It's early morning on a hospital ward. Patient 101 has just heard that her procedure moved to Thursday, and to her that means breakfast."),
-    (6.0, "Her chart still says nothing by mouth."),
-    (12.0, "This happens on every shift. What a patient was told, what's on the chart, and who's handling the difference drift apart, especially when the shift changes. Lantern keeps those three things together, inside the chat the care team already uses."),
-    (24.0, "Here's the setup. Four Mattermost rooms: a bedside tablet room for each patient, a nurse station, and a doctor review room. Two AI agents join through Switch, and only the staff rooms. Everything after this point is a live run. The human lines are played from a script so anyone can reproduce it."),
-    (38.0, "She mentions it in passing. She isn't asking anything. Lantern passes her message to the nurse station..."),
-    (46.0, "...and the intake agent notices it clashes with the diet order. It quotes her exactly and calls it a possible discrepancy. It doesn't decide anything."),
-    (56.0, "Only once the case is open does she hear back, and it's a fixed message, not an AI guess."),
-    (60.0, "Nurse Ana confirms what the patient meant, right in the thread."),
-    (68.0, "Now the coordinator agent carries the case into the doctor's room through Switch. Watch the receipts. When it says when the procedure moved, it cites a lookup number and the chart version it read. Lantern checks that the fact really matches the chart at that version, and only then marks it verified. The check proves the source is right. The medical decision still belongs to the doctor."),
-    (92.0, "Here Ana tries to change the order herself. Lantern refuses. Only a verified doctor, in the doctor's thread, can change it. That's enforced in code, not in a prompt."),
-    (102.0, "Dr. Lee checks the schedule and makes the call. The simulated chart moves from version three to version four."),
-    (112.0, "The patient gets Dr. Lee's own words, not an AI rewrite, and the name of the nurse following up."),
-    (120.0, "At seven, the shift changes. Ana records the dose she gave, kept separate from the orders, and hands off what's still open. The coordinator walks Ben through it, Ben accepts, and the patient can see that he owns it now. That's the last light."),
-    (142.0, f"Under the hood, it's simple on purpose. The two agents are {AGENTS}, connected through Switch Console. Switch decides who's in which room, who can address which agent, and keeps every reply in its thread. A small Python service with a SQLite record does everything that has to be exact: it forwards messages, opens case threads, logs every chart lookup, and checks every decision for the right person, room, thread and chart version."),
-    (160.0, "And we test the parts that matter: refused decisions, stale facts, sealed patient rooms."),
-    (166.0, "Agents notice. People decide. Code enforces. Lantern."),
+    (0.0, "At shift change, a nurse doesn't hand over one question. She hands over patients, medicines already given, decisions still waiting. Lantern keeps all of it in one shared record, inside the team's chat."),
+    (15.0, "Here's one concern, end to end. Patient 101 mentions breakfast in passing. The intake agent, working through Switch, notices her chart still says nothing by mouth, quotes her exactly, and flags it as possible. It doesn't decide."),
+    (30.0, "Ana confirms what the patient meant. The coordinator agent carries the case into the doctor's room and cites the chart with a receipt. Lantern checks that the cited value matches the lookup it logged at that chart version, and only then marks it verified."),
+    (58.0, "A nurse can't change the order here. Only a verified doctor can. Dr. Lee decides, the simulated chart moves to version four, and the patient gets her exact words, not an AI rewrite."),
+    (82.0, "One decision reaches the whole ward. The orders room logs the new chart version. Room service gets a tray task, only room service can close it, and the record shows who did and when. Medication keeps what was given separate from what was ordered."),
+    (100.0, "Everything lands in one record, and nothing gets blurred together. What she said, what the chart said, what was checked, what was decided, and who owns what's next. Each role sees the same record through its own window."),
+    (115.0, "And it isn't just Patient 101. Patient 102's question about walking alone is confirmed and waiting on the doctor, and Ana still owns it."),
+    (125.0, "Seven o'clock. Ana hands over what's still open on Patient 101. The coordinator walks Ben through it, with sources. Ben accepts, and the ward knows he owns it now."),
+    (150.0, f"Two {AGENTS} in Switch rooms do the noticing and the legwork. A small service enforces the rules and keeps the record."),
+    (165.0, "Agents notice. People decide. Code enforces. Lantern."),
 ]
