@@ -201,7 +201,7 @@ window.LANTERN_CASES=[
    {
     "kind": "chart",
     "actor": "record-service",
-    "text": "simulated chart v3 -> v4"
+    "text": "chart v3 -> v4"
    },
    {
     "kind": "task",

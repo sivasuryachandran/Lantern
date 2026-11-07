@@ -2,7 +2,7 @@
 (function () {
   var data = window.LANTERN_CASES || [], list = document.getElementById("caseList");
   if (!list) return;
-  var LABEL = { said: "SAID", draft: "DRAFT (unverified)", nurse: "NURSE CONFIRMED", chart: "SIMULATED CHART", decision: "CLINICIAN CONFIRMED",
+  var LABEL = { said: "SAID", draft: "DRAFT (unverified)", nurse: "NURSE CONFIRMED", chart: "CHART", decision: "CLINICIAN CONFIRMED",
                 given: "GIVEN", task: "OWNER", handoff: "HANDOFF", agent: "AGENT CLAIM CHECK", fetch: "LOOKUP" };
   var CHIP = { POSSIBLE_DISCREPANCY: "amber", CONFIRMED_CONFLICT: "cyan", RESOLVED: "green", HANDED_OFF: "violet", REJECTED: "red" };
   var state = "ALL", q = "";

@@ -18,11 +18,12 @@
   <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
   <nav class="nav-links" id="navlinks" aria-label="Main">
     <a href="how-it-works.html">How it works</a>
+    <a href="features.html">Features</a>
     <a href="built-on-switch.html">Built on Switch</a>
     <a href="cases.html">Cases</a>
     <a href="technical.html" aria-current="page">Technical</a>
     <a href="about.html">About</a>
-    <a href="index.html#film">Watch concept film</a>
+    <a href="index.html#film">Film</a>
     <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
   </nav>
   <div class="nav-right">
@@ -130,8 +131,8 @@
   <div class="wrap">
     <div class="sec-head reveal"><p class="eyebrow">Database and API</p><h2 id="db">SQLite underneath, read-only on top.</h2></div>
     <div class="grid2" style="gap:24px">
-      <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Table</th><th>Holds</th></tr></thead><tbody><tr><td>chart_versions</td><td>every simulated chart version, who changed it</td></tr><tr><td>cases</td><td>state, quote, order, chart version, owner, thread roots</td></tr><tr><td>events</td><td>said, draft, nurse, agent check, lookup, chart, decision, given, owner, handoff</td></tr><tr><td>decisions · handoffs · tasks · meds</td><td>the doctor's decision, handoffs, owners, medication given</td></tr><tr><td>lookups</td><td>the evidence log behind every receipt</td></tr><tr><td>rooms · room_tasks</td><td>who was in each room before, and the turnover checklist</td></tr><tr><td>audit</td><td>every accepted, rejected or ignored command, with the reason</td></tr><tr><td>posts_seen · outbox</td><td>idempotency keys for replay</td></tr></tbody></table></div></div>
-      <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Endpoint</th><th>Returns</th></tr></thead><tbody><tr><td><span class="mono">/api/cases[?state=]</span></td><td>cases and their state</td></tr><tr><td><span class="mono">/api/cases/&lt;n&gt;</span></td><td>events, decision, task, handoffs</td></tr><tr><td><span class="mono">/api/patients/&lt;id&gt;/chart</span></td><td>current simulated chart, and /versions</td></tr><tr><td><span class="mono">/api/lookups[?agent=]</span></td><td>the evidence log</td></tr><tr><td><span class="mono">/api/rooms · /api/tasks</span></td><td>rooms, previous occupant, open and done tasks, ready flag</td></tr><tr><td><span class="mono">/api/audit</span></td><td>accepted and refused commands</td></tr><tr><td><span class="mono">/api/timeline/&lt;id&gt;?role=</span></td><td>role-scoped timeline (Markdown or HTML)</td></tr><tr><td><span class="mono">/healthz</span></td><td>service status</td></tr></tbody></table></div></div>
+      <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Table</th><th>Holds</th></tr></thead><tbody><tr><td>chart_versions</td><td>every chart version, who changed it</td></tr><tr><td>cases</td><td>state, quote, order, chart version, owner, thread roots</td></tr><tr><td>events</td><td>said, draft, nurse, agent check, lookup, chart, decision, given, owner, handoff</td></tr><tr><td>decisions · handoffs · tasks · meds</td><td>the doctor's decision, handoffs, owners, medication given</td></tr><tr><td>lookups</td><td>the evidence log behind every receipt</td></tr><tr><td>rooms · room_tasks</td><td>who was in each room before, and the turnover checklist</td></tr><tr><td>audit</td><td>every accepted, rejected or ignored command, with the reason</td></tr><tr><td>posts_seen · outbox</td><td>idempotency keys for replay</td></tr></tbody></table></div></div>
+      <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Endpoint</th><th>Returns</th></tr></thead><tbody><tr><td><span class="mono">/api/cases[?state=]</span></td><td>cases and their state</td></tr><tr><td><span class="mono">/api/cases/&lt;n&gt;</span></td><td>events, decision, task, handoffs</td></tr><tr><td><span class="mono">/api/patients/&lt;id&gt;/chart</span></td><td>current chart, and /versions</td></tr><tr><td><span class="mono">/api/lookups[?agent=]</span></td><td>the evidence log</td></tr><tr><td><span class="mono">/api/rooms · /api/tasks</span></td><td>rooms, previous occupant, open and done tasks, ready flag</td></tr><tr><td><span class="mono">/api/audit</span></td><td>accepted and refused commands</td></tr><tr><td><span class="mono">/api/timeline/&lt;id&gt;?role=</span></td><td>role-scoped timeline (Markdown or HTML)</td></tr><tr><td><span class="mono">/healthz</span></td><td>service status</td></tr></tbody></table></div></div>
     </div>
     <p class="muted reveal" style="margin-top:14px">The API cannot change the record and refuses the patient role. Bound to 127.0.0.1 by default.</p>
   </div>
@@ -167,7 +168,7 @@
 <div class="wrap">
   <div>
     <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
-    <p>Built for the Flip the Switch hackathon: WeMakeDevs × DevTools Academy × Switch. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+    <p>Built for the Flip the Switch hackathon, hosted by WeMakeDevs and DevTools Academy, on Switch. Voice-first with Wispr Flow. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
   </div>
   <ul aria-label="Links">
     <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>

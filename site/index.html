@@ -18,11 +18,12 @@
   <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
   <nav class="nav-links" id="navlinks" aria-label="Main">
     <a href="how-it-works.html">How it works</a>
+    <a href="features.html">Features</a>
     <a href="built-on-switch.html">Built on Switch</a>
     <a href="cases.html">Cases</a>
     <a href="technical.html">Technical</a>
     <a href="about.html">About</a>
-    <a href="index.html#film">Watch concept film</a>
+    <a href="index.html#film">Film</a>
     <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
   </nav>
   <div class="nav-right">
@@ -102,7 +103,7 @@
     <div class="sec-head reveal"><p class="eyebrow">How Lantern thinks</p><h2 id="think">Agents notice. People decide. Code enforces.</h2></div>
     <div class="grid3">
       <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><h3>Agents notice</h3><p class="muted"><b>intake</b> flags a possible discrepancy and quotes the patient exactly. <b>care-coordinator</b> carries the case to the doctor, citing where each fact came from. Neither can change the chart.</p></div>
-      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><h3>People decide</h3><p class="muted">A nurse confirms the conflict. Only a verified doctor's decision changes the simulated chart, and the patient gets the doctor's own words.</p></div>
+      <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><h3>People decide</h3><p class="muted">A nurse confirms the conflict. Only a verified doctor's decision changes the chart, and the patient gets the doctor's own words.</p></div>
       <div class="card reveal"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><h3>Code enforces</h3><p class="muted">A small record service checks the quote, the role, the room, the thread and the chart version. It is the only thing that says "resolved" or speaks to a patient.</p></div>
     </div>
   </div>
@@ -113,8 +114,8 @@
     <div class="sec-head reveal"><p class="eyebrow">Built on Switch</p><h2 id="sw">Teammates in the room, not a chatbot in a corner.</h2>
     <p class="lead">Switch puts AI agents into Mattermost rooms next to the people: nurses, the doctor, room service. Lantern uses that for the teamwork, and keeps isolation as room membership, not as a prompt.</p></div>
     <div class="stats reveal" role="list">
-      <div class="stat" role="listitem"><b>2</b><span>AI teammates</span></div>
-      <div class="stat" role="listitem"><b>9</b><span>rooms, 4 of them patients'</span></div>
+      <div class="stat" role="listitem"><b>4</b><span>agent roles: intake, care-coordinator, interpreter, scribe</span></div>
+      <div class="stat" role="listitem"><b>9</b><span>private rooms, 4 of them patients'</span></div>
       <div class="stat" role="listitem"><b>✓</b><span>every cited fact receipted</span></div>
       <div class="stat" role="listitem"><b>0</b><span>agents in patient rooms</span></div>
     </div>
@@ -132,6 +133,35 @@
   </div>
 </section>
 
+
+<section aria-labelledby="what">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">What Lantern does</p><h2 id="what">One ward, start to finish.</h2>
+    <p class="lead">Everything below is built, tested and shown in the demo. <a href="features.html">See the full feature list.</a></p></div>
+    <div class="grid3">
+      <div class="card reveal"><h3>Concerns, caught</h3><p class="muted">A patient's passing remark is checked against their orders. The quote stays word for word, and a nurse confirms before anything moves.</p></div>
+      <div class="card reveal"><h3>Receipts for every fact</h3><p class="muted">Agents cite a logged lookup. The service marks it verified or stale from its own log, never from the agent's words.</p></div>
+      <div class="card reveal"><h3>The doctor decides</h3><p class="muted">Only a verified doctor's decision changes the chart, and the patient gets the doctor's own words.</p></div>
+      <div class="card reveal"><h3>Voice in, voice out</h3><p class="muted">Dictate advice, reminders and notes with Wispr Flow. An interpreter agent translates both ways and reads aloud, always beside the original.</p></div>
+      <div class="card reveal"><h3>The whole ward</h3><p class="muted">Orders, medicines, room service, discharge turnover, room history and a shift record, all in the same record.</p></div>
+      <div class="card reveal"><h3>Handoffs that stick</h3><p class="muted">The owner hands over open and resolved cases. The next nurse accepts, and ownership changes everywhere. Jira and Calendar follow.</p></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="spons">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Built for Flip the Switch</p><h2 id="spons">Hosts and partners.</h2></div>
+    <div class="grid4 reveal" style="gap:14px">
+      <div class="card"><h3 style="font-size:1.2rem">Switch</h3><p class="muted">The infrastructure Lantern is built on: rooms, agents and Mattermost.</p></div>
+      <div class="card"><h3 style="font-size:1.2rem">WeMakeDevs</h3><p class="muted">Host of the hackathon (Nov 4 to 7, 2026).</p></div>
+      <div class="card"><h3 style="font-size:1.2rem">DevTools Academy</h3><p class="muted">Co-host of the hackathon.</p></div>
+      <div class="card"><h3 style="font-size:1.2rem">Wispr Flow</h3><p class="muted">Side-track partner. We build and run Lantern by voice.</p></div>
+    </div>
+    <p class="muted reveal" style="margin-top:14px;font-size:.9rem">Entered for: Best Business Workflow, Code with Wispr, Best Blog and #HowISwitch.</p>
+  </div>
+</section>
+
 <section>
   <div class="wrap"><div class="cta reveal">
     <h2>See one concern travel the whole way.</h2>
@@ -144,7 +174,7 @@
 <div class="wrap">
   <div>
     <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
-    <p>Built for the Flip the Switch hackathon: WeMakeDevs × DevTools Academy × Switch. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+    <p>Built for the Flip the Switch hackathon, hosted by WeMakeDevs and DevTools Academy, on Switch. Voice-first with Wispr Flow. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
   </div>
   <ul aria-label="Links">
     <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
