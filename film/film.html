@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lantern concept film</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Concept film. Every visual is a pure function of the time t (seconds): window.setT(t). No wall-clock animation. */
+:root{--bg:#0A101C;--panel:#111A2B;--line:#1E2A40;--ink:#E8EDF5;--muted:#9AA6B8;--amber:#F5B544;--green:#3DD68C;--cyan:#4CC9F0;--violet:#A78BFA;--red:#F87171}
+html,body{margin:0;background:#000}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink)}
+.abs{position:absolute}
+.serif{font-family:"Instrument Serif",Georgia,serif}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.scene{position:absolute;inset:0;opacity:0}
+.line{position:absolute;left:0;right:0;top:830px;text-align:center;font:400 84px/1.12 "Instrument Serif",Georgia,serif;letter-spacing:-.01em;padding:0 180px;opacity:0}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:28px}
+.chip{display:inline-block;font:700 24px/1 Inter,sans-serif;letter-spacing:.14em;padding:10px 20px;border-radius:99px;border:2px solid}
+.amber{color:var(--amber);border-color:#6b4d16}.green{color:var(--green);border-color:#146044}.red{color:var(--red);border-color:#6b1d2d}
+#grain{position:absolute;inset:-256px;opacity:.07;mix-blend-mode:screen;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>");pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(closest-side at 50% 50%,rgba(0,0,0,0) 62%,rgba(0,0,0,.55));pointer-events:none}
+.lan svg{overflow:visible}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bloom" class="abs" style="left:360px;top:60px;width:1200px;height:900px;background:radial-gradient(closest-side,rgba(245,181,68,.32),rgba(245,181,68,0));opacity:0"></div>
+
+  <!-- persistent wire -->
+  <div id="wire" class="abs" style="left:960px;top:90px;width:0;height:0">
+    <div id="wireLine" class="abs" style="left:-520px;top:0;width:1040px;height:3px;background:#1E2A40;border-radius:3px;transform-origin:left center"></div>
+    <div id="wireLit" class="abs" style="left:-520px;top:0;width:1040px;height:3px;background:var(--amber);box-shadow:0 0 18px var(--amber);border-radius:3px;transform-origin:left center"></div>
+  </div>
+
+  <!-- scene 1 -->
+  <div id="s1" class="scene">
+    <div id="solo" class="abs" style="left:900px;top:330px;width:120px;height:192px"></div>
+    <div id="t1" class="line">Patients hear things before the chart does.</div>
+  </div>
+
+  <!-- scene 2 -->
+  <div id="s2" class="scene">
+    <div id="bubble" class="abs panel" style="left:200px;top:340px;width:620px;height:250px;border-radius:36px 36px 36px 8px;padding:36px 40px;box-sizing:border-box">
+      <div class="mono" style="font-size:22px;color:var(--muted);margin-bottom:12px">patient-101 · bedside tablet</div>
+      <div class="serif" style="font-size:44px;line-height:1.18;font-style:italic">“Can't wait for breakfast. Dr. Lee said it's fine now…”</div>
+    </div>
+    <div id="chartchip" class="abs panel" style="left:1120px;top:380px;width:600px;height:170px;padding:30px 40px;box-sizing:border-box">
+      <div class="mono" style="font-size:22px;color:var(--muted)">chart · ord-diet-1</div>
+      <div class="mono" style="font-size:62px;font-weight:600;margin-top:6px">NPO · v3</div>
+    </div>
+    <svg class="abs" style="left:0;top:0" width="1920" height="1080"><path id="link" d="M820 470 C 940 410, 1000 530, 1120 470" fill="none" stroke="#F5B544" stroke-width="4" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>
+    <div id="t2" class="line">When they disagree, someone has to own it.</div>
+  </div>
+
+  <!-- scene 3 -->
+  <div id="s3" class="scene">
+    <div class="abs panel" style="left:420px;top:290px;width:1080px;height:360px;padding:44px 56px;box-sizing:border-box">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="chip amber">POSSIBLE DISCREPANCY</span><span class="mono" style="font-size:24px;color:var(--muted)">intake · AI teammate</span></div>
+      <div class="serif" style="font-size:58px;line-height:1.2;margin-top:34px">“Can't wait for breakfast. <span id="ul" style="background:linear-gradient(var(--amber),var(--amber)) no-repeat 0 100%/0% 4px;padding-bottom:4px">Dr. Lee said it's fine now…</span>”</div>
+      <div class="mono" style="font-size:26px;color:var(--muted);margin-top:30px">conflicts with ord-diet-1 · NPO · chart v3</div>
+    </div>
+    <div id="t3" class="line">An AI teammate notices.</div>
+  </div>
+
+  <!-- scene 4 -->
+  <div id="s4" class="scene">
+    <div id="tiles"></div>
+    <svg class="abs" style="left:0;top:0" width="1920" height="1080">
+      <line x1="510" y1="430" x2="570" y2="430" stroke="#1E2A40" stroke-width="3"/>
+      <line id="path1" x1="930" y1="430" x2="990" y2="430" stroke="#F5B544" stroke-width="3" opacity="0"/>
+      <circle id="dot" r="14" cx="750" cy="430" fill="#F5B544" opacity="0" style="filter:drop-shadow(0 0 16px #F5B544)"/>
+    </svg>
+    <div id="slip" class="abs panel" style="left:990px;top:575px;width:400px;height:200px;border-radius:14px;padding:22px 26px;box-sizing:border-box;opacity:0">
+      <div class="mono" style="font-size:20px;color:var(--muted)">receipt · lookup #31</div>
+      <div class="mono" style="font-size:23px;margin-top:8px;white-space:nowrap">proc-1 v3 = Thu 9:00</div>
+      <div id="stamp" class="mono" style="position:absolute;right:20px;bottom:18px;color:var(--green);border:3px solid var(--green);border-radius:8px;padding:6px 14px;font-weight:700;font-size:26px;letter-spacing:.1em;transform:rotate(-4deg);opacity:0">✓ VERIFIED</div>
+    </div>
+    <div id="t4" class="line">The concern moves to the right people, with receipts.</div>
+  </div>
+
+  <!-- scene 5 -->
+  <div id="s5" class="scene">
+    <div id="refuse" class="abs" style="left:560px;top:290px;width:800px;height:76px;border-radius:16px;border:2px solid #6b1d2d;background:rgba(248,113,113,.10);display:flex;align-items:center;gap:20px;padding:0 28px;box-sizing:border-box;opacity:0">
+      <span class="chip red" style="font-size:20px;padding:8px 16px">REFUSED</span><span style="font-size:28px">only a verified doctor can decide</span></div>
+    <div id="flip" class="abs panel" style="left:460px;top:420px;width:1000px;height:190px;display:flex;align-items:center;justify-content:center;font-size:56px;box-sizing:border-box"><span id="flipTxt" class="mono" style="font-weight:600"></span></div>
+    <div id="t5" class="line">A clinician decides. Code makes sure only that counts.</div>
+  </div>
+
+  <!-- scene 6 -->
+  <div id="s6" class="scene">
+    <div class="abs mono" style="left:360px;top:330px;font-size:22px;color:var(--muted);letter-spacing:.12em">OUTGOING</div>
+    <div class="abs mono" style="left:1180px;top:330px;font-size:22px;color:var(--muted);letter-spacing:.12em">INCOMING</div>
+    <div class="abs" style="left:360px;top:380px;width:380px;height:130px;border:2px dashed #1E2A40;border-radius:28px"></div>
+    <div class="abs" style="left:1180px;top:380px;width:380px;height:130px;border:2px dashed #1E2A40;border-radius:28px"></div>
+    <div id="owner" class="abs panel" style="left:360px;top:380px;width:380px;height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box"><div class="mono" style="font-size:20px;color:var(--muted)">OWNER</div><div id="ownTxt" class="mono" style="font-size:44px;font-weight:600;margin-top:6px">nurse-ana</div></div>
+    <div id="accepted" class="abs" style="left:0;right:0;top:590px;text-align:center;opacity:0"><span class="chip green" style="font-size:28px">✓ ACCEPTED AT HANDOFF</span></div>
+    <div id="t6" class="line">The next shift owns what's still open.</div>
+  </div>
+
+  <!-- scene 7 -->
+  <div id="s7" class="scene">
+    <div id="word" class="abs serif" style="left:0;right:0;top:530px;text-align:center;font-size:150px;line-height:1;letter-spacing:.28em;padding-left:.28em">LANTERN</div>
+    <div id="tag" class="abs serif" style="left:0;right:0;top:700px;text-align:center;font-size:64px;font-style:italic;color:var(--amber)">No concern left in the dark.</div>
+    <div id="sub" class="abs" style="left:0;right:0;top:800px;text-align:center;font-size:34px;color:var(--muted)">What was said. What was confirmed. Who owns what's next.</div>
+    <div id="fine" class="abs mono" style="left:0;right:0;top:980px;text-align:center;font-size:24px;color:var(--muted);letter-spacing:.06em">Concept film · fictional · built on Switch</div>
+  </div>
+
+  <div id="vig"></div><div id="grain"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ramp=(t,a,b)=>clamp((t-a)/(b-a));
+const ease=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const eo=p=>1-Math.pow(1-p,3);
+const mix=(a,b,p)=>a+(b-a)*p;
+/* scene visibility: fade in over fi, fade out over fo */
+const vis=(t,a,b,fi=.8,fo=.8)=>ease(ramp(t,a,a+fi))*(1-ease(ramp(t,b-fo,b)));
+
+const LAN=`<svg viewBox="0 0 30 48" width="100%" height="100%"><path class="f" d="M15 1v5"/><path class="f" d="M8 12 15 6l7 6z"/><path class="f g" d="M8 12h14l2 22H6z"/><path class="fl" d="M15 17c3 4 4 6 4 9a4 4 0 0 1-8 0c0-3 1-5 4-9z"/><rect class="f" x="5" y="34" width="20" height="4" rx="1.5"/></svg>`;
+function paint(el,p,boost=0){            // p: 0 unlit outline .. 1 lit
+  const col=`rgb(${Math.round(mix(82,245,p))},${Math.round(mix(97,181,p))},${Math.round(mix(125,68,p))})`;
+  el.querySelectorAll('.f').forEach(n=>{n.setAttribute('fill','none');n.setAttribute('stroke',col);n.setAttribute('stroke-width','1.7');n.setAttribute('stroke-linejoin','round');n.setAttribute('stroke-linecap','round')});
+  el.querySelectorAll('.g').forEach(n=>n.setAttribute('fill',`rgba(245,181,68,${.28*p})`));
+  el.querySelectorAll('.fl').forEach(n=>{n.setAttribute('fill','#F5B544');n.setAttribute('opacity',p)});
+  el.style.filter=p>0.01?`drop-shadow(0 0 ${Math.round(10*p+26*boost)}px rgba(245,181,68,${(.7*p+.3*boost).toFixed(2)}))`:'none';
+}
+
+/* build lanterns on the wire */
+const LIT=[9.0,14.0,21.8,26.5,33.6,40.6], SLOT=i=>(i-2.5)*170;
+const wireEl=$('wire'), lans=[];
+for(let i=0;i<6;i++){const d=document.createElement('div');d.className='abs lan';d.style.cssText=`left:${SLOT(i)-34}px;top:0;width:68px;height:109px`;d.innerHTML=LAN;wireEl.appendChild(d);lans.push(d)}
+$('solo').innerHTML=LAN;
+/* room tiles */
+const rooms=[['patient-101','private room',true],['nurse-station','intake · care-coordinator',false],['doctor-review','care-coordinator · Dr. Lee',false],['patient-102','private room',true]];
+$('tiles').innerHTML=rooms.map((r,i)=>`<div class="abs panel tile" style="left:${150+i*420}px;top:340px;width:360px;height:180px;box-sizing:border-box;padding:26px 28px;${r[2]?'border-style:dashed;':''}">
+ <div class="mono" style="font-size:32px;font-weight:600">${r[0]}</div>
+ <div style="font-size:22px;color:var(--muted);margin-top:8px">${r[1]}</div>
+ ${r[2]?'<div style="margin-top:18px;color:var(--green);font-size:22px;font-weight:600;display:flex;gap:10px;align-items:center"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>no agents</div>':''}</div>`).join('');
+
+function setScene(id,o){$(id).style.opacity=o;$(id).style.visibility=o<.005?'hidden':'visible'}
+function line(id,t,a,b){const o=vis(t,a,b,1.0,.7);$(id).style.opacity=o;$(id).style.transform=`translateY(${(1-ease(ramp(t,a,a+1.2)))*14}px)`}
+
+window.setT=function(t){
+  /* grain: re-seeded per frame, deterministic */
+  const f=Math.round(t*30);$('grain').style.transform=`translate(${(f*53)%256}px,${(f*97)%256}px)`;
+
+  /* wire: appears after scene 1, moves to centre in scene 7 */
+  const wv=ease(ramp(t,5.8,7.2));
+  const move=ease(ramp(t,43.0,45.2));
+  const wy=mix(90,330,move), ws=mix(1,1.7,move);
+  wireEl.style.transform=`translateY(${wy-90}px) scale(${ws})`;wireEl.style.transformOrigin='0 0';
+  wireEl.style.opacity=1;
+  $('wireLine').style.transform=`scaleX(${eo(ramp(t,6.0,7.6))})`;
+  const ext=lans.reduce((m,_,i)=>Math.max(m,ease(ramp(t,LIT[i]-.6,LIT[i]+.4))*(SLOT(i)+580)),0);
+  $('wireLit').style.transform=`scaleX(${Math.min(1,ext/1040)})`;
+  lans.forEach((el,i)=>{
+    const show=i===0?ramp(t,5.8,6.8):ramp(t,6.4+i*.25,7.4+i*.25);
+    el.style.opacity=ease(show)*(t<5.8?0:1);
+    const p=ease(ramp(t,LIT[i],LIT[i]+.9));
+    let boost=0; if(t>43.8){boost=Math.max(0,Math.sin(Math.PI*clamp((t-(44.2+i*.4))/1.6)))}
+    paint(el,p,boost);
+  });
+  /* final: also all lit steady in last scene */
+  if(t>=46){lans.forEach(el=>paint(el,1,.15))}
+
+  /* scene 1 */
+  const v1=vis(t,0.2,6.4,1.6,1.0);
+  setScene('s1',1);
+  $('solo').style.opacity=ease(ramp(t,0.8,3.0))*(1-ease(ramp(t,5.4,6.4)));
+  paint($('solo'),0,0);$('solo').style.transform=`translateY(${Math.sin(t*1.3)*5}px)`;
+  line('t1',t,2.2,6.2);
+
+  /* scene 2 */
+  setScene('s2',vis(t,6.0,13.4,.6,.9));
+  $('bubble').style.transform=`translateY(${(1-eo(ramp(t,6.6,8.0)))*24}px)`;$('bubble').style.opacity=eo(ramp(t,6.6,8.0));
+  $('chartchip').style.opacity=eo(ramp(t,7.4,8.6));
+  const lk=eo(ramp(t,8.4,10.0));$('link').style.strokeDashoffset=1-lk;
+  const pulse=lk>=1?.8+.2*Math.sin((t-10)*5):1;$('link').style.opacity=pulse;$('link').style.filter=`drop-shadow(0 0 ${6+8*pulse}px #F5B544)`;
+  line('t2',t,7.6,12.8);
+
+  /* scene 3 */
+  setScene('s3',vis(t,13.0,21.4,.8,.9));
+  $('ul').style.backgroundSize=`${ease(ramp(t,15.0,17.2))*100}% 4px`;
+  line('t3',t,15.0,20.8);
+
+  /* scene 4 */
+  setScene('s4',vis(t,21.0,29.4,.8,.9));
+  document.querySelectorAll('.tile').forEach((n,i)=>{n.style.opacity=eo(ramp(t,21.4+i*.25,22.6+i*.25))});
+  const tr=ease(ramp(t,23.2,25.6));
+  $('dot').setAttribute('cx',mix(750,1170,tr));$('dot').style.opacity=tr>0&&tr<1?1:(tr>=1?ease(1-ramp(t,26.0,26.6)):0);
+  $('path1').setAttribute('x1',930);$('path1').setAttribute('x2',mix(930,990,1));$('path1').style.opacity=0;
+  $('slip').style.opacity=eo(ramp(t,25.8,26.8));$('slip').style.transform=`translateY(${(1-eo(ramp(t,25.8,26.8)))*18}px)`;
+  const st=ease(ramp(t,27.0,27.5));$('stamp').style.opacity=st;$('stamp').style.transform=`rotate(-4deg) scale(${mix(1.8,1,st)})`;
+  line('t4',t,24.2,28.8);
+
+  /* scene 5 */
+  setScene('s5',vis(t,29.0,36.4,.8,.9));
+  const rf=ramp(t,30.0,30.5)*(1-ramp(t,31.4,32.2));$('refuse').style.opacity=rf;
+  const flip=ramp(t,33.0,33.9), old=flip<.5;
+  $('flip').style.transform=`scaleY(${Math.abs(1-2*flip)<0.02?0.02:Math.abs(1-2*flip)})`;
+  $('flip').style.opacity=eo(ramp(t,29.6,30.6));
+  if(old){$('flipTxt').innerHTML=`<span style="text-decoration:line-through;text-decoration-color:${t>32.6?'#F87171':'transparent'};text-decoration-thickness:4px">Diet: NPO</span>`;$('flip').style.borderColor='#1E2A40'}
+  else{$('flipTxt').innerHTML='Diet: Regular · Dr. Lee · v4';$('flip').style.borderColor='#146044'}
+  line('t5',t,31.6,35.8);
+
+  /* scene 6 */
+  setScene('s6',vis(t,36.0,43.4,.8,.9));
+  const mv=ease(ramp(t,37.6,39.6));$('owner').style.left=`${mix(360,1180,mv)}px`;
+  $('ownTxt').textContent=mv<.5?'nurse-ana':'nurse-ben';
+  $('owner').style.borderColor=mv>=1?'#146044':'#1E2A40';
+  $('accepted').style.opacity=eo(ramp(t,39.9,40.7));
+  line('t6',t,38.0,42.6);
+
+  /* scene 7 */
+  setScene('s7',ease(ramp(t,43.4,44.6)));
+  $('bloom').style.opacity=ease(ramp(t,45.0,47.2))*.9;
+  const a=ease(ramp(t,45.4,46.6)),b=ease(ramp(t,46.6,47.8)),c=ease(ramp(t,47.6,48.6)),d=ease(ramp(t,48.4,49.4));
+  $('word').style.opacity=a;$('word').style.transform=`translateY(${(1-a)*20}px)`;
+  $('tag').style.opacity=b;$('sub').style.opacity=c;$('fine').style.opacity=d;
+};
+window.setT(+(new URLSearchParams(location.search).get('t')||0));
+</script>
+</body>
+</html>
