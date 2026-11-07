@@ -8,6 +8,8 @@ users:
   nurse-ana:        {role: nurse, shift: outgoing, display: "Nurse Ana"}
   nurse-ben:        {role: nurse, shift: incoming, display: "Nurse Ben"}
   dr-lee:           {role: doctor, display: "Dr. Lee"}
+  service-sam:      {role: service, display: "Sam (room service)"}
+  service-rita:     {role: service, display: "Rita (room service)"}
   intake:           {role: agent, display: "intake"}
   care-coordinator: {role: agent, display: "care-coordinator"}
   record-bot:       {role: bot, display: "record-bot"}
@@ -24,6 +26,6 @@ rooms:
   # Ward feeds: staff-only rooms that record-bot writes to when something downstream needs to know. No agents, no patients.
   orders:        [dr-lee, nurse-ana, nurse-ben, record-bot]       # every simulated chart change
   medication:    [nurse-ana, nurse-ben, dr-lee, record-bot]       # every GIVEN, kept apart from orders
-  room-service:  [nurse-ana, nurse-ben, record-bot]               # diet changes that affect a tray
+  room-service:  [service-sam, service-rita, nurse-ana, nurse-ben, record-bot]   # diet changes that affect a tray; room service closes tasks here with DONE <id>
 
 first_case_number: 17

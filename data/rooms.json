@@ -1,0 +1,34 @@
+{"_note": "Fictional ward 4W rooms: who is there now, who was there before, and the turnover checklist for that earlier stay. Nothing here is real.",
+ "rooms": [
+  {"room": "4W-101", "patient_id": "101",
+   "previous": {"ref": "P-090 (fictional)", "discharged_at": "2026-11-03T14:20", "precautions": "none", "diet": "cardiac",
+                "notes": "Reading glasses left behind, returned to the family at the desk."},
+   "tasks": [
+    {"id": "T-101-1", "kind": "housekeeping", "text": "Terminal clean of bed, rails and bathroom", "status": "done", "done_by": "service-sam", "done_at": "2026-11-03T15:10"},
+    {"id": "T-101-2", "kind": "linen", "text": "Replace linen and privacy curtain", "status": "done", "done_by": "service-sam", "done_at": "2026-11-03T15:25"},
+    {"id": "T-101-3", "kind": "equipment", "text": "Sanitize IV pole and bedside monitor", "status": "done", "done_by": "service-rita", "done_at": "2026-11-03T15:40"},
+    {"id": "T-101-4", "kind": "tray", "text": "Collect previous patient's meal tray", "status": "done", "done_by": "service-sam", "done_at": "2026-11-03T14:35"},
+    {"id": "T-101-5", "kind": "supplies", "text": "Restock the supply cart", "status": "open", "done_by": "", "done_at": ""}]},
+  {"room": "4W-102", "patient_id": "102",
+   "previous": {"ref": "P-087 (fictional)", "discharged_at": "2026-11-03T11:05", "precautions": "contact precautions (fictional example)", "diet": "renal",
+                "notes": "Contact precautions were in place, so the full turnover protocol applies before this room is treated as clean."},
+   "tasks": [
+    {"id": "T-102-1", "kind": "housekeeping", "text": "Terminal clean with the contact-precautions protocol", "status": "done", "done_by": "service-rita", "done_at": "2026-11-03T12:40"},
+    {"id": "T-102-2", "kind": "linen", "text": "Replace linen and privacy curtain", "status": "done", "done_by": "service-rita", "done_at": "2026-11-03T12:55"},
+    {"id": "T-102-3", "kind": "equipment", "text": "Sanitize bedside equipment and call button", "status": "open", "done_by": "", "done_at": ""},
+    {"id": "T-102-4", "kind": "supplies", "text": "Check the sharps container", "status": "open", "done_by": "", "done_at": ""}]},
+  {"room": "4W-103", "patient_id": "103",
+   "previous": {"ref": "P-091 (fictional)", "discharged_at": "2026-11-02T16:30", "precautions": "none", "diet": "regular",
+                "notes": "Walker returned to physical therapy."},
+   "tasks": [
+    {"id": "T-103-1", "kind": "housekeeping", "text": "Terminal clean of bed, rails and bathroom", "status": "done", "done_by": "service-sam", "done_at": "2026-11-02T17:20"},
+    {"id": "T-103-2", "kind": "linen", "text": "Replace linen and privacy curtain", "status": "done", "done_by": "service-sam", "done_at": "2026-11-02T17:35"},
+    {"id": "T-103-3", "kind": "equipment", "text": "Sanitize bedside monitor", "status": "done", "done_by": "service-rita", "done_at": "2026-11-02T17:50"}]},
+  {"room": "4W-104", "patient_id": "104",
+   "previous": {"ref": "P-088 (fictional)", "discharged_at": "2026-11-03T09:10", "precautions": "none", "diet": "low sodium",
+                "notes": "Leftover tray still in the room at discharge."},
+   "tasks": [
+    {"id": "T-104-1", "kind": "tray", "text": "Collect leftover meal tray", "status": "open", "done_by": "", "done_at": ""},
+    {"id": "T-104-2", "kind": "housekeeping", "text": "Terminal clean of bed, rails and bathroom", "status": "done", "done_by": "service-rita", "done_at": "2026-11-03T10:30"},
+    {"id": "T-104-3", "kind": "linen", "text": "Replace linen and privacy curtain", "status": "done", "done_by": "service-rita", "done_at": "2026-11-03T10:45"}]}
+ ]}

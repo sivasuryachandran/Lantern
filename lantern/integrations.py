@@ -46,6 +46,19 @@ class Jira:
         self._assign(res["key"], owner)
         return f"Jira task {res['key']} created for Case {case['id']}, owner {owner}"
 
+    def on_room_task(self, task, db):
+        """One Jira task per room task the record service opens (for example a tray change after a diet decision)."""
+        key = f"jira-task:{task['id']}"
+        if _once(db, task["source_case"] or 0, key):
+            return None
+        res = self.http("POST", f"{self.url}/rest/api/3/issue", {"fields": {
+            "project": {"key": self.project}, "issuetype": {"name": "Task"},
+            "summary": f"Room service {task['room']}: {task['text']}",
+            "description": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": f"Fictional demo data. Task {task['id']}, room {task['room']}."}]}]}}}, self.headers)
+        _remember(db, task["source_case"] or 0, key, res["key"])
+        return f"Jira task {res['key']} created for room task {task['id']}"
+
     def on_accept(self, case, owner, db):
         ref = _once(db, case["id"], "jira")
         if not ref:

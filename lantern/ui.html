@@ -90,6 +90,7 @@ footer{padding:8px 20px 24px;color:var(--dim);font-size:12px}
   </section>
   <section style="display:grid;gap:14px;align-content:start">
     <div class="card"><h2 id="chartTitle">Simulated chart</h2><div id="chart"></div><div class="ver" id="vers"></div></div>
+    <div class="card"><h2>Rooms &amp; turnover <span style="text-transform:none;letter-spacing:0;color:var(--dim)">- who was here before, and what is still open</span></h2><div class="feed" id="rooms"></div></div>
     <div class="card"><h2>Command audit <span style="text-transform:none;letter-spacing:0;color:var(--dim)">- red = refused by code</span></h2><div class="feed" id="audit"></div></div>
   </section>
 </main>
@@ -103,7 +104,7 @@ const BASE=location.protocol.startsWith('http')?'':(new URLSearchParams(location
 const get=p=>fetch(BASE+p,{headers:H}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hm=ts=>new Date(ts*1000).toLocaleTimeString([], {hour12:false});
-const LABEL={said:'SAID',draft:'DRAFT (unverified)',nurse:'NURSE CONFIRMED',chart:'SIMULATED CHART',decision:'CLINICIAN CONFIRMED',given:'GIVEN',task:'OWNER',handoff:'HANDOFF',agent:'AGENT CLAIM CHECK',fetch:'LOOKUP'};
+const LABEL={said:'SAID',draft:'DRAFT (unverified)',nurse:'NURSE CONFIRMED',chart:'SIMULATED CHART',decision:'CLINICIAN CONFIRMED',given:'GIVEN',service:'ROOM SERVICE',task:'OWNER',handoff:'HANDOFF',agent:'AGENT CLAIM CHECK',fetch:'LOOKUP'};
 let sel=null, cur=null;
 $('bigBtn').onclick=()=>{document.body.classList.toggle('big');$('bigBtn').classList.toggle('on')};
 addEventListener('keydown',e=>{if(e.key==='p'||e.key==='P')$('bigBtn').click()});
@@ -161,13 +162,15 @@ async function tick(){
       <div class="quote">patient ${esc(c.patient_id)} · ${esc(c.topic)} · ${esc(c.owner||'')}</div></div>`).join('');
     document.querySelectorAll('.case').forEach(el=>el.onclick=()=>{sel=+el.dataset.id;tick()});
     const d=await get('/api/cases/'+sel), pid=d.case.patient_id;
-    const [chart,vers,lk,aud]=await Promise.all([get(`/api/patients/${pid}/chart`),get(`/api/patients/${pid}/chart/versions`),get('/api/lookups'),get('/api/audit?limit=40')]);
+    const [chart,vers,lk,aud,rooms,open]=await Promise.all([get(`/api/patients/${pid}/chart`),get(`/api/patients/${pid}/chart/versions`),get('/api/lookups'),get('/api/audit?limit=40'),get('/api/rooms'),get('/api/tasks?status=open')]);
     const mine=lk.filter(l=>l.patient_id===pid);
     drawPipe(d,mine);
     $('chartTitle').textContent=`Simulated chart · ${chart.display_name} · v${chart.chart_version}`;
     $('chart').innerHTML=chart.orders.map(o=>`<div class="ord ${o.status!=='active'?'old':''}"><span>${esc(o.type)} order <small style="color:var(--dim)">${esc(o.status)}</small></span><span class="v">${esc(o.value)}</span></div>`).join('')
       +chart.schedule.map(e=>`<div class="ord"><span>${esc(e.name)}</span><span class="v" style="color:var(--cyan)">${esc((e.scheduled_for||'').replace('T',' '))}</span></div>`).join('');
     $('vers').innerHTML=vers.map(v=>`<span class="${v.version===chart.chart_version?'cur':''}">v${v.version} · ${esc(v.changed_by||'seed')}</span>`).join('');
+    $('rooms').innerHTML=rooms.map(r=>{const left=open.filter(t=>t.room===r.room);const here=r.patient_id===pid;
+      return `<div class="ev" style="${here?'background:#38e1ff14':''}"><span><b>${esc(r.room)}</b> · patient ${esc(r.patient_id)}<br><span class="ig">before: ${esc(r.prev_ref)}${r.prev_precautions&&r.prev_precautions!=='none'?' · '+esc(r.prev_precautions):''}</span>${left.map(t=>`<br><span style="color:var(--amber)">open: ${esc(t.id)} ${esc(t.text)}</span>`).join('')}</span><span class="badge ${left.length?'no':'ok'}">${r.tasks_done}/${r.tasks_total}${left.length?'':' ✓'}</span></div>`}).join('');
     const reset=cur!==sel; cur=sel;
     feed('events',d.events,e=>e.id,(e,f)=>`<div class="row" style="${f?'':'animation:none'}"><span class="t">${hm(e.ts)}</span><span class="tag k-${e.kind}">${LABEL[e.kind]||e.kind}<br><span style="color:var(--dim);font-weight:400">${esc(e.actor)}</span></span><span>${esc(e.text)}</span></div>`,'events',reset);
     const stale=l=>l.version<chart.chart_version;

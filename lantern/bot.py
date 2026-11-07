@@ -36,7 +36,7 @@ def run(interval=1.5):
     chat, svc = build()
     _, lock = actions.serve(svc, host=os.environ.get("LANTERN_BIND", "127.0.0.1"),
                             port=int(os.environ.get("LANTERN_ACTION_PORT", "8099")))
-    rooms = [r for r in svc.roles.rooms if r.startswith("patient-")] + ["nurse-station", "doctor-review"]   # feed rooms are write-only
+    rooms = [r for r in svc.roles.rooms if r.startswith("patient-")] + ["nurse-station", "doctor-review", "room-service"]   # orders and medication are write-only
     print("record-bot running; rooms:", ", ".join(rooms), "| lookup tool: /chart/<patient>/<entry>",
           "| buttons:", bool(svc.action_url),
           "| integrations:", [type(i).__name__ for i in svc.integrations])

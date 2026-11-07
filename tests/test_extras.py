@@ -27,7 +27,8 @@ class TestIntegrations(unittest.TestCase):
                                  {"nurse-ana": "acc-ana", "nurse-ben": "acc-ben"}, http),
                             GoogleCalendar("tok", "care", http=http)]
         full_run(chat, svc)
-        create = [c for c in http.calls if c[0] == "POST" and "issue" in c[1]]
+        create = [c for c in http.calls if c[0] == "POST" and "issue" in c[1]
+                  and c[2]["fields"]["summary"].startswith("Case")]           # the case task; the tray task is tested apart
         self.assertEqual(len(create), 1)
         self.assertIn("Case 17", create[0][2]["fields"]["summary"])
         assigns = [c[2]["accountId"] for c in http.calls if c[0] == "PUT"]
@@ -348,7 +349,66 @@ class TestWardFeeds(unittest.TestCase):
         chat, roles, db, svc = make_env()
         for room in ("orders", "medication", "room-service"):
             for member in roles.rooms[room]:
-                self.assertIn(roles.by_name(member).role, ("nurse", "doctor", "bot"))
+                self.assertIn(roles.by_name(member).role, ("nurse", "doctor", "bot", "service"))
         self.assertEqual(roles.agents_in_patient_rooms(), [])
         self.assertEqual(sorted(r for r in roles.rooms if r.startswith("patient-")),
                          ["patient-101", "patient-102", "patient-103", "patient-104"])
+
+
+class TestRoomsAndRoomService(unittest.TestCase):
+    def say_done(self, chat, svc, user, task, room="room-service"):
+        svc.handle(chat.say(user, room, f"DONE {task}"))
+
+    def test_rooms_hold_previous_occupant_and_turnover_state(self):
+        chat, roles, db, svc = make_env()
+        r = db.execute("SELECT * FROM rooms WHERE room='4W-102'").fetchone()
+        self.assertEqual(r["patient_id"], "102")
+        self.assertIn("contact precautions", r["prev_precautions"])
+        states = {t["id"]: t["status"] for t in db.execute("SELECT * FROM room_tasks WHERE room='4W-102'")}
+        self.assertEqual(states["T-102-1"], "done")
+        self.assertEqual(states["T-102-3"], "open")
+
+    def test_diet_decision_opens_a_tray_task_and_room_service_closes_it(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        decide(chat, svc, case)
+        task = db.execute("SELECT * FROM room_tasks WHERE source_case=?", (case["id"],)).fetchone()
+        self.assertEqual((task["kind"], task["status"], task["room"]), ("tray", "open", "4W-101"))
+        self.assertIn(f"DONE {task['id']}", chat.bot_posts("room-service")[-1]["message"])
+        self.say_done(chat, svc, "service-sam", task["id"])
+        done = db.execute("SELECT * FROM room_tasks WHERE id=?", (task["id"],)).fetchone()
+        self.assertEqual((done["status"], done["done_by"]), ("done", "service-sam"))
+        self.assertIn("Recorded", chat.bot_posts("room-service")[-1]["message"])
+        kinds = [(e["kind"], e["actor"]) for e in db.execute("SELECT * FROM events WHERE case_id=?", (case["id"],))]
+        self.assertIn(("service", "service-sam"), kinds)
+
+    def test_only_room_service_can_close_a_task_and_only_once(self):
+        chat, roles, db, svc = make_env()
+        self.say_done(chat, svc, "nurse-ana", "T-102-3")
+        self.say_done(chat, svc, "patient-101", "T-102-3", room="patient-101")
+        self.assertEqual(db.execute("SELECT status FROM room_tasks WHERE id='T-102-3'").fetchone()["status"], "open")
+        self.assertEqual(db.execute("SELECT outcome FROM audit WHERE action='DONE'").fetchone()["outcome"], "rejected")
+        self.say_done(chat, svc, "service-rita", "T-102-3")
+        self.say_done(chat, svc, "service-sam", "T-102-3")          # a second close does nothing
+        self.assertEqual(db.execute("SELECT done_by FROM room_tasks WHERE id='T-102-3'").fetchone()["done_by"], "service-rita")
+        self.say_done(chat, svc, "service-sam", "T-999-9")
+        self.assertIn("No task", chat.bot_posts("room-service")[-1]["message"])
+
+    def test_service_events_are_staff_only(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        decide(chat, svc, confirm(chat, svc, case))
+        from lantern import timeline
+        self.assertIn("ROOM SERVICE", timeline.render(db, svc, "101", "nurse"))
+        self.assertNotIn("ROOM SERVICE", timeline.render(db, svc, "101", "patient"))
+
+    def test_jira_task_for_a_tray_change_uses_the_fake_http_layer(self):
+        calls = []
+        jira = Jira("https://x.example", "a@b.c", "tok", "LAN", http=lambda m, u, b=None, h=None: calls.append((m, u, b)) or {"key": "LAN-7"})
+        chat, roles, db, svc = make_env()
+        svc.integrations = [jira]
+        _, case = open_case(chat, svc)
+        decide(chat, svc, confirm(chat, svc, case))
+        summaries = [c[2]["fields"]["summary"] for c in calls if c[1].endswith("/issue") and c[0] == "POST"]
+        self.assertTrue(any(s.startswith("Room service 4W-101") for s in summaries))

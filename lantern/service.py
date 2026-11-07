@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-NURSE, DOCTOR, PATIENT_ROOM = "nurse-station", "doctor-review", "patient-{}"
+NURSE, DOCTOR, PATIENT_ROOM, ROOM_SERVICE = "nurse-station", "doctor-review", "patient-{}", "room-service"
 
 POSSIBLE, CONFIRMED, REJECTED, RESOLVED, HANDED_OFF = (
     "POSSIBLE_DISCREPANCY", "CONFIRMED_CONFLICT", "REJECTED", "RESOLVED", "HANDED_OFF")
@@ -32,6 +32,7 @@ RE_REJECT = re.compile(r"^REJECT Case (\d+)\s+(\S.*)$", re.S)
 RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
+RE_DONE = re.compile(r"^DONE (T-[\w-]+)\s*$")
 RE_DECIDE = re.compile(r"^DECIDE Case (\d+) v(\d+) (\w+)=(\w+)\s*\n\s*EXPLAIN:\s*(\S.*)$", re.S)
 # Switch's own progress posts ("Working... 13s", "Queued...", "Starting a session"): no claims, never answered
 RE_STATUS = re.compile(r"^\s*(\*\*(Working|Worked|Queued)|Starting a session)", re.I)
@@ -70,6 +71,10 @@ CREATE TABLE IF NOT EXISTS external(case_id INTEGER, kind TEXT, ref TEXT, PRIMAR
 CREATE TABLE IF NOT EXISTS lookups(
   id INTEGER PRIMARY KEY AUTOINCREMENT, ts REAL, agent TEXT, patient_id TEXT, entry TEXT,
   version INTEGER, label TEXT, value TEXT);
+CREATE TABLE IF NOT EXISTS rooms(
+  room TEXT PRIMARY KEY, patient_id TEXT, prev_ref TEXT, prev_discharged TEXT, prev_precautions TEXT, prev_diet TEXT, prev_notes TEXT);
+CREATE TABLE IF NOT EXISTS room_tasks(
+  id TEXT PRIMARY KEY, room TEXT, kind TEXT, text TEXT, status TEXT, done_by TEXT, done_at TEXT, source_case INTEGER, ts REAL);
 CREATE TABLE IF NOT EXISTS audit(
   id INTEGER PRIMARY KEY AUTOINCREMENT, post_id TEXT, user_id TEXT, room TEXT,
   action TEXT, outcome TEXT, reason TEXT, ts REAL);
@@ -90,6 +95,15 @@ def seed(db, data_dir, first_case_number=1):
             chart = json.loads(f.read_text())
             db.execute("INSERT OR IGNORE INTO chart_versions VALUES(?,?,?,?,?)",
                        (chart["patient_id"], chart["chart_version"], json.dumps(chart), "seed", time.time()))
+        rooms_file = Path(data_dir) / "rooms.json"
+        if rooms_file.exists():
+            for r in json.loads(rooms_file.read_text())["rooms"]:
+                prev = r["previous"]
+                db.execute("INSERT OR IGNORE INTO rooms VALUES(?,?,?,?,?,?,?)",
+                           (r["room"], r["patient_id"], prev["ref"], prev["discharged_at"], prev["precautions"], prev["diet"], prev["notes"]))
+                for t in r["tasks"]:
+                    db.execute("INSERT OR IGNORE INTO room_tasks VALUES(?,?,?,?,?,?,?,?,?)",
+                               (t["id"], r["room"], t["kind"], t["text"], t["status"], t["done_by"], t["done_at"], None, time.time()))
         if not db.execute("SELECT 1 FROM cases").fetchone() and \
            not db.execute("SELECT 1 FROM sqlite_sequence WHERE name='cases'").fetchone():
             db.execute("INSERT INTO sqlite_sequence(name, seq) VALUES('cases', ?)", (first_case_number - 1,))
@@ -266,6 +280,8 @@ class Service:
                 self._nurse_room_post(post, user)
             elif post.room == DOCTOR:
                 self._doctor_room_post(post, user)
+            elif post.room == ROOM_SERVICE:
+                self._service_room_post(post, user)
         self.db.execute("INSERT OR IGNORE INTO posts_seen VALUES(?)", (post.id,))
         self.db.commit()
 
@@ -631,9 +647,71 @@ class Service:
                    f"Patient {c['patient_id']}: {d['change']}. Simulated chart v{d['from_version']} -> v{d['to_version']}, "
                    f"decided by {doctor.display} (Case {number}). Fictional data.")
         if d["change"].startswith("diet"):
+            task_id = f"T-{c['patient_id']}-D{number}"
+            self._open_room_task(task_id, c["patient_id"], "tray", f"Update the tray: {d['change']} (Case {number})", number)
             self._feed(f"feed:room-service:{number}", "room-service",
-                       f"Patient {c['patient_id']}: {d['change']} (simulated chart v{d['to_version']}). Update the tray. Fictional data.")
+                       f"Patient {c['patient_id']}: {d['change']} (simulated chart v{d['to_version']}). Update the tray. "
+                       f"Task {task_id}: reply DONE {task_id} when it is delivered. Fictional data.")
         self._notify("on_resolved", number, first)
+
+    # ------------------------------------------------------------ room service
+    def room_for(self, patient_id):
+        row = self.db.execute("SELECT room FROM rooms WHERE patient_id=?", (patient_id,)).fetchone()
+        return row["room"] if row else f"4W-{patient_id}"
+
+    def _open_room_task(self, task_id, patient_id, kind, text, case_number):
+        """Create a room task once (idempotent). Returns True if it was newly created."""
+        with self.db:
+            cur = self.db.execute("INSERT OR IGNORE INTO room_tasks VALUES(?,?,?,?,?,?,?,?,?)",
+                                  (task_id, self.room_for(patient_id), kind, text, "open", "", "", case_number, self.now()))
+            if cur.rowcount:
+                self._event(patient_id, case_number, "service", "record-service",
+                            f"room task {task_id} opened for room service: {text}", f"task {task_id}")
+        if cur.rowcount:
+            self._notify_task(task_id)
+        return bool(cur.rowcount)
+
+    def _notify_task(self, task_id):
+        task = self.db.execute("SELECT * FROM room_tasks WHERE id=?", (task_id,)).fetchone()
+        for integ in self.integrations:
+            hook = getattr(integ, "on_room_task", None)
+            if hook is None:
+                continue
+            try:
+                note = hook(dict(task), self.db)
+            except Exception as e:                       # an integration failing never blocks the loop
+                note = f"{type(integ).__name__} failed: {e}"
+            if note:
+                self._event(self.db.execute("SELECT patient_id FROM rooms WHERE room=?", (task["room"],)).fetchone()["patient_id"],
+                            task["source_case"], "task", "integration", note)
+                self.db.commit()
+
+    def _service_room_post(self, post, user):
+        """DONE <task id>: room service closes a room task (tray, linen, cleaning, supplies). Only room service can."""
+        m = RE_DONE.match(post.message.strip())
+        if not m:
+            return
+        if user.role != "service":
+            self._audit(post, "DONE", "rejected", "only room-service staff can close a room task")
+            return
+        task = self.db.execute("SELECT * FROM room_tasks WHERE id=?", (m.group(1),)).fetchone()
+        if task is None:
+            self._audit(post, "DONE", "rejected", "unknown task id")
+            self._say(f"svc:unknown:{post.id}", ROOM_SERVICE, f"No task {m.group(1)}.", post.id)
+            return
+        if task["status"] == "done":
+            self._audit(post, "DONE", "ignored", f"already done by {task['done_by']}")
+            return
+        pid = self.db.execute("SELECT patient_id FROM rooms WHERE room=?", (task["room"],)).fetchone()["patient_id"]
+        with self.db:
+            self.db.execute("UPDATE room_tasks SET status='done', done_by=?, done_at=? WHERE id=?",
+                            (user.username, datetime.now().strftime("%Y-%m-%dT%H:%M"), task["id"]))
+            self._event(pid, task["source_case"], "service", user.username,
+                        f"room task {task['id']} done: {task['text']}", f"post {post.id}")
+        self._audit(post, "DONE", "accepted")
+        left = self.db.execute("SELECT COUNT(*) n FROM room_tasks WHERE room=? AND status='open'", (task["room"],)).fetchone()["n"]
+        self._say(f"svc:done:{task['id']}", ROOM_SERVICE,
+                  f"Recorded: {task['id']} done by {user.display} ({task['text']}). {task['room']} has {left} open task(s).", post.id)
 
     def _first_owner(self, number):
         """The nurse the follow-up task was created for (before any handoff)."""
