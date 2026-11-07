@@ -44,7 +44,7 @@ The world does not need another AI that writes things down. We built for the mom
 
 Lantern is a ward built on [Switch](https://github.com/sandbox-quantum/switch): nine private rooms where people and AI teammates share one history. The most important design decision we made was not a prompt. It was a membership list.
 
-![Nine rooms. Four with no agent in them.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-ward.png)
+![Nine channels. One shared shift record.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-ward-channels.png)
 
 | Who | Their job | What they can never do |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ The AI in this hospital is not allowed to say "resolved". Only the record servic
 
 **4. Evidence, with receipts.** record-bot opens the case in `doctor-review` and @mentions care-coordinator, which pulls chart facts through a logged lookup tool and cites each one. Then it says the sentence we are proudest of: *"I am not recommending a decision."*
 
-![The green tick does not mean the doctor is right.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-receipt.png)
+![A receipt proves the source, not the decision.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-receipt-source.png)
 
 Here it is in the room. Note Ana's `DECIDE` at the bottom of the thread, which changes nothing:
 
