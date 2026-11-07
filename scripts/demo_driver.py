@@ -22,6 +22,7 @@ import urllib.request
 ap = argparse.ArgumentParser()
 ap.add_argument("--real", action="store_true")
 ap.add_argument("--pause", action="store_true")
+ap.add_argument("--also", type=int, default=0, metavar="N", help="at shift change also hand off and accept the still-open case N (the pre-roll case)")
 ap.add_argument("--preroll", action="store_true", help="v2 script: leave patient 102's activity case open and awaiting Dr. Lee, with a GIVEN at 06:05, then stop")
 ap.add_argument("--delay", type=float, default=2.0, help="seconds between steps when not pausing")
 ap.add_argument("--service", default=os.environ.get("LANTERN_SERVICE", "http://127.0.0.1:8099"))
@@ -158,6 +159,15 @@ if args.real:
 say("nurse-ben", "nurse-station", f"ACCEPT Case {case}", root["id"])
 wait("patient-101", lambda p: "Following up: nurse-ben" in p["message"], "owner change")
 print("   owner is now nurse-ben")
+
+if args.also:
+    step(f"6b. The still-open Case {args.also} is handed over too")
+    root_also = [p for p in posts("nurse-station") if p["message"].startswith(f"Case {args.also} ") and "possible discrepancy" in p["message"]][-1]
+    say("nurse-ana", "nurse-station", f"HANDOFF Case {args.also} open: awaiting Dr. Lee; fall risk, assist to bathroom", root_also["id"])
+    wait("nurse-station", lambda p: f"HANDOFF pending for Case {args.also}" in p["message"], "second handoff")
+    say("nurse-ben", "nurse-station", f"ACCEPT Case {args.also}", root_also["id"])
+    wait("nurse-station", lambda p: f"Case {args.also} follow-up accepted by nurse-ben" in p["message"], "second accept")
+    print(f"   Case {args.also} is now owned by nurse-ben and is still awaiting Dr. Lee")
 
 step("7. Isolation: patient-102 asks about 101's case")
 say("patient-102", "patient-102", f"What happened in Case {case}?")

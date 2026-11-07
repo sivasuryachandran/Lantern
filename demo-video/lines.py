@@ -14,7 +14,7 @@ BEATS = [
     (82.0, "One decision reaches the whole ward. The orders room logs the new chart version. Room service gets a tray task, only room service can close it, and the record shows who did and when. Medication keeps what was given separate from what was ordered."),
     (100.0, "Everything lands in one record, and nothing gets blurred together. What she said, what the chart said, what was checked, what was decided, and who owns what's next. Each role sees the same record through its own window."),
     (115.0, "And it isn't just Patient 101. Patient 102's question about walking alone is confirmed and waiting on the doctor, and Ana still owns it."),
-    (125.0, "Seven o'clock. Ana hands over what's still open on Patient 101. The coordinator walks Ben through it, with sources. Ben accepts, and the ward knows he owns it now."),
+    (125.0, "Seven o'clock. Ana hands over everything that's still open, across both patients. The coordinator walks Ben through it, with sources. Ben accepts, and the whole ward knows he owns it now."),
     (150.0, f"Two {AGENTS} in Switch rooms do the noticing and the legwork. A small service enforces the rules and keeps the record."),
     (165.0, "Agents notice. People decide. Code enforces. Lantern."),
 ]

@@ -46,7 +46,7 @@ Each ward room (`4W-101` to `4W-104`) records who is there now, **who was there 
 | 3 | A diet decision changes what the tray should be | task-tracker | room service closes with `DONE` | `orders` feed, `room-service` feed, room task, ROOM SERVICE timeline row, Jira task if configured | built |
 | 4 | A nurse gives a medicine | none | outgoing nurse posts `GIVEN` | `medication` feed, GIVEN row, order unchanged | built |
 | 5 | Shift change for a resolved case | care-coordinator briefs | outgoing `HANDOFF`, incoming `ACCEPT` | owner changes everywhere | built |
-| 6 | Shift change for a case still waiting on the doctor | care-coordinator | would need a handoff | | **not supported**: `HANDOFF` requires a resolved case; the case stays with its owner |
+| 6 | Shift change for a case still waiting on the doctor | care-coordinator briefs | the owner's `HANDOFF`, the incoming nurse's `ACCEPT`; the case keeps its clinical state and the doctor can still decide it | owner changes, state unchanged, later decision keeps the new owner | built (open and resolved cases; rejected cases and non-owners are refused) |
 | 7 | Nurse tries to change an order | none | refused by code | audit row, no chart change | built |
 | 8 | Stale or uncited fact from an agent | receipt-checker | the doctor sees ⚠ | lookup log, audit | built |
 | 9 | Patient asks about another patient's case | record-bot | refused | fixed template, audit | built |

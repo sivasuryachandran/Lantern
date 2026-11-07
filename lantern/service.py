@@ -494,9 +494,13 @@ class Service:
         c = self._case_in_thread(post, m.group(1), "HANDOFF")
         if c is None:
             return
-        if c["state"] != RESOLVED:
-            self._audit(post, "HANDOFF", "rejected", f"case is {c['state']}, not RESOLVED")
+        if c["state"] in (REJECTED, HANDED_OFF):
+            self._audit(post, "HANDOFF", "rejected", f"case is {c['state']}, nothing open to hand off")
             self._reply(post, "rej", f"HANDOFF ignored: Case {c['id']} is {c['state']}.")
+            return
+        if c["owner"] != user.username:                  # open or resolved, only the nurse who owns it can hand it over
+            self._audit(post, "HANDOFF", "rejected", f"only the case owner ({c['owner']}) can hand it off")
+            self._reply(post, "rej", f"HANDOFF ignored: Case {c['id']} is owned by {c['owner']}.")
             return
         with self.db:
             self.db.execute("INSERT OR IGNORE INTO handoffs(case_id,from_nurse,open_text,post_id,ts) VALUES(?,?,?,?,?)",
@@ -529,7 +533,9 @@ class Service:
             self.db.execute("UPDATE handoffs SET accepted_by=?, accept_post_id=? WHERE id=?",
                             (user.username, post.id, pending["id"]))
             self.db.execute("UPDATE tasks SET owner=?, accepted=1 WHERE case_id=?", (user.username, c["id"]))
-            self.db.execute("UPDATE cases SET state=?, owner=? WHERE id=?", (HANDED_OFF, user.username, c["id"]))
+            # a resolved case becomes HANDED_OFF; an open case keeps its clinical state (it is still waiting on the doctor)
+            self.db.execute("UPDATE cases SET state=?, owner=? WHERE id=?",
+                            (HANDED_OFF if c["state"] == RESOLVED else c["state"], user.username, c["id"]))
             self._event(c["patient_id"], c["id"], "task", user.username,
                         f"accepted the follow-up; owner is now {user.username}", f"post {post.id}")
         self._audit(post, "ACCEPT", "accepted")
@@ -617,18 +623,16 @@ class Service:
                                  f"{otype}: {active[0]['value']} -> {value}", explanation, self.now()))
                 self.db.execute("INSERT INTO chart_versions VALUES(?,?,?,?,?)",
                                 (c["patient_id"], version + 1, json.dumps(new), user.username, self.now()))
-                self.db.execute("UPDATE cases SET state=?, owner=? WHERE id=?",
-                                (RESOLVED, chart["care_team"]["nurse"], number))
+                self.db.execute("UPDATE cases SET state=? WHERE id=?", (RESOLVED, number))       # the owner stays whoever holds it now
                 self.db.execute("INSERT OR IGNORE INTO tasks VALUES(?,?,?,0)",
-                                (number, "confirm the patient received the doctor's explanation",
-                                 chart["care_team"]["nurse"]))
+                                (number, "confirm the patient received the doctor's explanation", c["owner"]))
                 self._event(c["patient_id"], number, "decision", user.username,
                             f"{otype} {active[0]['value']} -> {value}; explanation sent to patient",
                             f"post {post.id}")
                 self._event(c["patient_id"], number, "chart", "record-service",
                             f"simulated chart v{version} -> v{version + 1}", f"post {post.id}")
                 self._event(c["patient_id"], number, "task", "record-service",
-                            f"follow-up owner: {chart['care_team']['nurse']}", f"post {post.id}")
+                            f"follow-up owner: {c['owner']}", f"post {post.id}")
             self._audit(post, "DECIDE", "accepted")
             c = self.case(number)
         else:
@@ -714,6 +718,5 @@ class Service:
                   f"Recorded: {task['id']} done by {user.display} ({task['text']}). {task['room']} has {left} open task(s).", post.id)
 
     def _first_owner(self, number):
-        """The nurse the follow-up task was created for (before any handoff)."""
-        chart = self.chart(self.case(number)["patient_id"])
-        return chart["care_team"]["nurse"]
+        """The nurse who owns the case now (the care-team nurse, or whoever accepted a handoff while it was still open)."""
+        return self.case(number)["owner"]
