@@ -64,8 +64,8 @@ Their code-level behaviors (`READY`, `DISCHARGE`, overdue reminders, the double-
 | --- | --- | --- |
 | Lantern database (SQLite) | charts, cases, events, decisions, lookups, audit, rooms, room tasks | built, tested |
 | Mattermost rooms and threads | every conversation and every feed | built, run locally |
-| Jira | one task per resolved case, and one per room task Lantern opens | built; unit-tested against a fake HTTP layer; **Lantern's own hook has not run against a real Jira**. On Nov 7 Claude created seven matching tasks (KAN-4 to KAN-10) in the `lantern-demo` site through the Atlassian connector so the board shows the open work; those were not created by the service |
-| Google Calendar | a follow-up event on a resolved case | built; **Lantern's own hook has not run live**. Claude created four labeled test events (handoff, doctor decision, room service, an earlier test) on the owner's calendar through the Calendar connector |
+| Jira | one task per resolved case, and one per room task Lantern opens | built; unit-tested against a fake HTTP layer; **Lantern's own hook has not run against a real Jira**. The intended owner of this is the care-coordinator agent through the Console's Atlassian connector (see its instructions); it has not done so yet. Claude created seven placeholder tasks (KAN-4 to KAN-10) by hand on Nov 7, which are not agent or service output and may be deleted |
+| Google Calendar | a follow-up event on a resolved case | built; **Lantern's own hook has not run live**. the intended owner is the care-coordinator agent through the Console's Google connector. Claude created four labeled placeholder events by hand on Nov 7, which are not agent output and may be deleted |
 | Switch room documents (for example a handoff sheet) | not written by us | designed only; I have not verified Switch's room-document feature here |
 | Scheduled or recurring checks (for example aging tasks) | not built | designed |
 
