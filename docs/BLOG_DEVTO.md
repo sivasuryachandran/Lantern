@@ -1,162 +1,185 @@
 ---
-title: "We gave four AI agents a hospital shift. We did not let them play doctor."
+title: "The nurse was right. We refused her anyway."
 published: false
-description: "Lantern: a ward built on Switch where AI agents notice and carry concerns, people decide, and code checks what counts. With the proof for every claim."
+description: "The nurse typed the right order and code refused her. How we built a hospital ward on Switch where agents carry the work and only doctors decide."
 tags: ai, agents, healthcare, hackathon
-cover_image: https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/cover.png
+cover_image: https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-cover.png
 ---
 
-*By Siva Surya Chandran · Flip the Switch Hackathon, November 2026*
+> **Fictional patients, a simulated chart, human roles played by our team.** Lantern is a hackathon prototype for Flip the Switch. It is not a clinical system and gives no medical advice.
 
-> **Fictional patients, a simulated chart, human roles played by our team.** Lantern is a hackathon prototype. It is not a clinical system, not an EHR, and not medical advice.
+Nurse Ana typed the correct order. The right patient, the right change, the right reason, even the doctor's explanation, word for word.
 
-**Demo video (2:52):** [Watch on YouTube](https://youtu.be/QR7r84tyBlo) · **Code:** [github.com/sivasuryachandran/Lantern](https://github.com/sivasuryachandran/Lantern)
+Lantern refused her.
 
-## The end of a shift
+Moments later Dr. Lee typed the same words, character for character. The chart moved from version 3 to version 4, and the patient got an answer.
 
-It's 6:40 in the morning and Nurse Ana's shift ends at seven. One patient asked, half an hour ago, whether she can walk to the bathroom alone. The doctor hasn't answered. Ana gave a medicine at 6:05 that the next nurse needs to know about. And Patient 101 has just said something to her bedside tablet, in passing:
+That is not a bug. It is the entire idea.
+
+{% embed https://youtu.be/QR7r84tyBlo %}
+
+**[Read the code](https://github.com/sivasuryachandran/Lantern)** · By Siva Surya Chandran
+
+![Same words. Only one counts.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-same-words.png)
+
+## The most dangerous sentence on a ward
+
+It is 6:40 in the morning. Ana's shift ends at seven. A patient has just told her bedside tablet:
 
 > "Can't wait for breakfast. Dr. Lee said it's fine now that my procedure moved."
 
-Her chart still says **NPO**: nothing by mouth.
+Her chart says **NPO**: nothing by mouth.
 
-Nobody did anything wrong. A doctor said something reasonable, the chart hasn't caught up, and in twenty minutes a different nurse takes over. Ana can write a handoff, but writing a handoff is not the same as Ben *accepting* it.
+Nobody here did anything wrong. A doctor said something reasonable, the chart has not caught up, and in twenty minutes a different nurse takes over. The patient may be right. The chart may be right. And the next person to walk in will not know there was ever a question.
 
-That gap is what Lantern is for. Named AI agents work inside the care team's chat through [Switch](https://github.com/sandbox-quantum/switch). They notice when a patient's words don't match the chart, carry the question to the right people, and cite every chart fact with a receipt that code checks. **The agents never decide anything.** A nurse confirms what the patient meant, a doctor makes the call, and the next nurse explicitly accepts what is still open.
+The Joint Commission defines a hand-off as *"a transfer and acceptance of patient care responsibility achieved through effective communication"* ([AHRQ PSNet summary](https://psnet.ahrq.gov/issue/inadequate-hand-communication)). Read that again and stop at **acceptance**. Sending a message is not transferring a responsibility. Its alert on hand-offs lists wrong-site surgery, treatment delays, falls and medication errors among reported adverse events, and cites a 2016 study estimating that communication failures played a part in about 30% of malpractice claims ([Sentinel Event Alert 58, PDF](https://jointcommission.org/-/media/tjc/documents/resources/patient-safety-topics/sentinel-event/sea_58_hand_off_comms_9_6_17_final_(1).pdf)).
 
-*What was said. What was confirmed. Who owns what's next.*
+The world does not need another AI that writes things down. We built for the moment *after*: when the words and the record disagree, and somebody has to notice, the right person has to decide, and the next shift has to know who owns what's left.
 
-## Why this gap matters
+**What was said. What was confirmed. Who owns what's next.**
 
-The Joint Commission defines a hand-off as "a transfer and acceptance of patient care responsibility achieved through effective communication" (AHRQ PSNet summary of Sentinel Event Alert 58). Note the word *acceptance*: someone has to actually take ownership, not just receive a message. The alert lists wrong-site surgery, delays in treatment, falls and medication errors among the adverse events linked to hand-off failures, and cites a 2016 estimate that communication failures played a part in about 30% of malpractice claims ([Sentinel Event Alert 58](https://www.jointcommission.org/)).
+## We kept AI out of the room that matters most
 
-Tools for writing things down already exist. We didn't want to build another scribe. We wanted the moment after something is written down: the patient's words and the record disagree, somebody has to notice, the right person has to decide, and the next shift has to know who owns what's left. That is a coordination problem, and coordination happens in team chat, which is where Switch puts AI agents.
+Lantern is a ward built on [Switch](https://github.com/sandbox-quantum/switch): nine private rooms where people and AI teammates share one history. The most important design decision we made was not a prompt. It was a membership list.
 
-## Nine rooms, one ward
+![Nine rooms. Four with no agent in them.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-ward.png)
 
-The ward is nine private rooms in Mattermost, connected to agents through Switch:
-
-- **Four patient rooms** (`patient-101` to `patient-104`): the bedside tablets. **No agent is ever a member.**
-- **Two staff rooms:** `nurse-station` and `doctor-review`, where people and agents work together.
-- **Three feeds:** `orders`, `medication`, `room-service`. Only Lantern's service writes to `orders` and `medication`.
-
-| Who | What they do |
-| --- | --- |
-| Patients | mention concerns, receive only permitted updates (patient 103 writes Spanish) |
-| Nurse Ana / Ben | `CONFIRM` or `REJECT` what a patient meant, record medicines, hand off, accept |
-| Dr. Lee | the only one whose `DECIDE` changes the simulated chart |
-| Sam / Rita (room service) | close tray and turnover tasks; nobody else can |
-| **intake** (agent) | flags a *possible* discrepancy, quoting the patient exactly |
-| **care-coordinator** (agent) | carries the case to the doctor, cites chart facts with lookup receipts, briefs the next nurse |
-| **interpreter**, **scribe** (agents) | translate both ways, file dictated notes and reminders |
-| **record-bot** | plain code, not an AI: opens case threads, checks claims and roles, posts the ✓/⚠ checks, sends fixed patient messages |
-
-Agents notice and coordinate. People confirm and decide. Code determines what counts.
-
-## The case, told as evidence
-
-1. **The bedside.** Patient 101's remark lands in `patient-101`; record-bot carries it to `nurse-station`.
-2. **The first agent notices.** `intake` puts her exact words beside the active chart entry (`ord-diet-1`, NPO, v3) and labels it *possible discrepancy*. The service rejects any card whose quote is not an exact substring of her real message.
-3. **A person clarifies.** Case 17 opens. Nurse Ana replies `CONFIRM Case 17`.
-4. **Receipts.** In `doctor-review`, `care-coordinator` summarises the case. Each cited fact (for example `proc-1 v3 · lookup #2`) is checked by the service against its own lookup log and marked ✓. That ✓ proves a match with a logged value. It does not prove the medicine is right.
-
-![doctor-review thread with the coordinator's summary and the ✓ verified receipts](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-doctor-review-receipts.png)
-
-5. **The refusal.** Ana tries a `DECIDE` herself. Code refuses it (author, role, room, thread, chart version) and the chart stays at v3. The screenshot above shows her attempt in the thread, and the dashboard counts it under "refused by code".
-6. **The doctor decides.** Dr. Lee's `DECIDE Case 17 v3 diet=regular` plus `EXPLAIN:` is the only event that moves the chart to v4. The patient receives Dr. Lee's own words, attributed, with "Following up: nurse-ana" under them.
-
-![mission control: Patient 101 at chart v4 after the doctor's decision](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-dashboard-chart-v4.png)
-
-7. **The decision becomes work.** The diet change opens a tray task in `room-service`. A nurse's `DONE` is refused. Sam's is accepted.
-8. **The shift doesn't erase the work.** Ana posts `HANDOFF`; the coordinator briefs Ben with sources, including the 6:05 dose; nothing changes owner until Ben posts `ACCEPT Case 17`. Then the owner flips to Ben everywhere.
-
-![nurse-station: HANDOFF, the coordinator's brief, ACCEPT by nurse-ben, and the owner change](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-accept-owner-change.png)
-
-## The rest of the ward
-
-- **Spanish.** Patient 103 writes in Spanish; the interpreter shows the English beside the original, and can read the translation aloud. The clinician still owns the answer.
-- **Medicines given are not orders.** `GIVEN` records that a nurse says a dose was given. A second entry for the same medicine is flagged as a possible double entry; both stay visible.
-- **Speech becomes the right kind of entry.** `NOTE` changes nothing else. `ADVICE` records the doctor's advice plus a *draft* `DECIDE` she must send herself. `REMIND` posts back when due.
-- **Discharge.** `DISCHARGE` opens a turnover checklist; `READY` reports whether every task is closed.
-- **Mission control** is a read-only dashboard of 14 panels (patients, cases, evidence ledger, simulated chart versions, medicines, room tasks, translations, reminders, tracking, command audit). It cannot write to the chart.
-- **Work leaves the chat.** Follow-ups become a Jira task and a Calendar event, linked back to the thread. These are real items in our test workspace:
-
-![the real Jira board (KAN project) with the Lantern case and room-service tasks; avatars blurred](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-jira-board-full.png)
-
-![the real Google Calendar with the three [Lantern] follow-up events; personal calendar list and avatar blurred](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-google-calendar-full.png)
-
-The dashboard lists both with their command audit:
-
-![dashboard Tracking and Command audit panels](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-tracking-and-audit.png)
-
-## Lantern × Wispr Flow
-
-Nurses don't have free hands, and Wispr Flow works in any text box, including Mattermost, with no integration code. Every staff command is a short, speakable line (`CONFIRM Case 17`, `HANDOFF Case 17 open: …`), and Whisper Mode fits a quiet 7:00 handoff. The hard rule is the same with voice: dictation is just a faster keyboard, and a spoken `DECIDE` from a nurse is refused exactly like a typed one, because the service checks *who posted*, not how they typed. In our recording the commands were typed by the driver; the voice design is documented in [docs/WISPR.md](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/docs/WISPR.md). 
-
-![how Wispr Flow fits Lantern: dictate, Whisper Mode, Dictionary, Snippets](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-wispr-flow.png)
-
-## Why Switch is the backbone
-
-Switch turns each channel into a room where people and AI teammates work together. Agents show up under their own names, one agent can sit in several rooms, and room membership is the privacy model: the most important design decision we made was *which rooms an agent may enter*, and in Switch that is a setting, not code. Without it we would have a chatbot and a database: no agents working in the staff's own rooms, no agent-to-agent handoff in plain sight, no isolation between patient rooms.
-
-## What we hit
-
-| What happened | Why | What we did |
+| Who | Their job | What they can never do |
 | --- | --- | --- |
-| Agents ignored everything we typed | We chatted as the Mattermost admin, and Switch ignores that account | used a normal user |
-| Couldn't register a custom agent from a script | Console 0.40.1 had no page for an Agent Protocol key | used a Mattermost bot account and its REST API for system posts |
-| Service couldn't find a thread an agent started | Switch message ids and Mattermost post ids differ | the service starts every case thread itself and stores both ids |
-| **The Console agents didn't answer Mattermost messages at recording time** | we have not found the cause yet (the agents were re-created late; account linking and addressing are the suspects) | the recorded run uses stand-in agents (below) |
+| **intake** (agent) | Spots a possible mismatch and quotes the patient exactly | Diagnose, or enter a patient room |
+| **care-coordinator** (agent) | Carries the case to the doctor with cited chart facts, briefs the next nurse | Recommend a decision or change an order |
+| **interpreter**, **scribe** (agents) | Translate both ways, file dictated notes | Turn a translation or a note into an order |
+| **record-bot** (plain code) | Opens cases, checks every claim, posts the ✓ | Improvise. It has no model in it |
+| **Nurses** | Confirm, record medicines, hand off, accept | Change an order |
+| **Dr. Lee** | Decides | Decide outside the case thread |
+| **Room service** | Close tray and turnover tasks | Touch the chart |
 
-## What is real in the demo, and what is not
+The AI in this hospital is not allowed to say "resolved". Only the record service can. Agents notice and carry. People decide. Code enforces.
 
-We'd rather say it than have you find it:
+## Case 17, step by step
 
-- The record service, record-bot, every ✓ check, refusal, chart change, task close and owner change in the video come from **one real run** against a local Mattermost.
-- The humans (patients, nurses, Dr. Lee, room service) are **played by our script**.
-- The agents in the recording are **rule-based stand-ins** (`lantern/simagents.py`, captioned "stand-in mode (tests)"), because our two Switch Console agents (`intake`, `care-coordinator`, on OpenCode) were not answering Mattermost messages by the time we recorded. They did run live in Console earlier in the build. `interpreter` and `scribe` exist only as code stand-ins.
-- The Wispr bubbles in the video are labelled re-enactments.
-- No nurse has reviewed this. We prepared the questions ([docs/NURSE_REVIEW.md](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/docs/NURSE_REVIEW.md)) and ran out of time.
+**1. The bedside.** Patient 101's remark lands in her room. record-bot forwards it to `nurse-station`, keeping the original post id.
 
-## Proof you can check
+**2. The agent notices, and the code checks the agent.** intake posts a *possible* discrepancy against `ord-diet-1 · NPO · v3`. If its quote is not an exact substring of what she really wrote, the service throws the card away. An agent cannot put words in a patient's mouth.
+
+**3. A person clarifies.** Case 17 opens. Only now does the patient get a fixed message that the team is checking. Ana replies `CONFIRM Case 17`.
+
+**4. Evidence, with receipts.** record-bot opens the case in `doctor-review` and @mentions care-coordinator, which pulls chart facts through a logged lookup tool and cites each one. Then it says the sentence we are proudest of: *"I am not recommending a decision."*
+
+![The green tick does not mean the doctor is right.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-receipt.png)
+
+Here it is in the room. Note Ana's `DECIDE` at the bottom of the thread, which changes nothing:
+
+![doctor-review in the recorded run: the coordinator's cited summary, the verified receipts, and the nurse's refused DECIDE](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-doctor-review-receipts.png)
+
+**5. The refusal.** Ana's `DECIDE` fails the first check. There is no argument to win, no prompt to jailbreak, nothing to persuade. The chart stays at v3 and the refusal goes on the audit log.
+
+![Six checks between a message and the chart.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-six-checks.png)
+
+**6. Advice is not a decision.** Dr. Lee says: *"She can have a regular diet today, her procedure moved to Thursday."* Lantern files that as `ADVICE`, offers a draft `DECIDE`, and changes nothing. A sentence said out loud does not become an order until she sends it herself.
+
+**7. The chart moves.** Her `DECIDE` passes all six checks. v3 becomes v4, and Patient 101 receives Dr. Lee's own words, attributed, never an AI's paraphrase.
+
+![Mission control: Patient 101 now at chart version 4](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-dashboard-chart-v4.png)
+
+## One decision, and the whole ward moves
+
+**The kitchen hears about it.** The diet change opens a tray task in `room-service`. Ana tries `DONE`: refused. Sam posts `DONE T-101-D17`: closed, with his name on it.
+
+**The language barrier gets a witness.** Patient 103 writes *"El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo."* The nurse sees the English beside the original, and the doctor's answer returns in Spanish, labelled as a translation, under her original words. It can be read aloud. It can never change an order.
+
+**Two entries for one medicine get flagged, not hidden.** Acetaminophen recorded at 08:00 and again at 12:10 raises a possible double entry. Both stay visible. `GIVEN` is a record of what a nurse says happened; it never rewrites an order, and Lantern does not judge the dose.
+
+**A curious patient hits a wall.** Patient 102 asks about Case 17 and is told Lantern only shares updates about their own care. Their account gets a 403 on the other room.
+
+**Mission control watches everything and can change nothing.** Fourteen read-only panels: patients, cases, evidence, chart versions, medicines, room tasks, translations, reminders, tracking and the command audit.
+
+![Dashboard panels: medicines, room turnover, tasks, translations, reminders, tracking and command audit](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-tracking-and-audit.png)
+
+## Seven o'clock: where hospitals lose things
+
+Ana posts `HANDOFF`. The coordinator briefs Ben on what's open. And then, nothing happens. The case still belongs to Ana, because Ben hasn't said so.
+
+![A handoff is not a handoff until someone says accept.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-accept.png)
+
+One word from Ben, and the owner changes on the record.
+
+![nurse-station in the recorded run: HANDOFF, the brief, ACCEPT, and the owner change](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-accept-owner-change.png)
+
+## The night our agents went quiet
+
+Here is the part most demo posts would leave out.
+
+On Nov 4, real agents in Switch Console ran the full case, three times in a row, with refusals tested live. Then we rebuilt them on OpenCode for the final version, and by recording night they had stopped answering Mattermost messages. We never found out why in time.
+
+So we made the call you are watching: rule-based stand-ins play the agents in the recording, and every frame says so.
+
+![We swapped the agents on recording night. The rules did not move.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-swap.png)
+
+It hurt. It also proved the thesis better than any slide could. **We replaced the agents and not one guardrail moved**, because no guardrail ever lived inside an agent. If your safety depends on your model behaving, a model change is a safety incident. Ours was a Tuesday.
+
+| In the video | What it really is |
+| --- | --- |
+| record-bot posts, ✓ checks, refusals, chart changes, task closes, owner changes | **Real**, from one run against a local Mattermost |
+| Patients, nurses, doctor, room service | **Scripted**, played by our team's driver |
+| intake, care-coordinator, interpreter, scribe | **Stand-ins**, rule-based, labelled on screen |
+| Wispr bubbles | **Re-enactment**, labelled; the commands were typed |
+| Jira board and Google Calendar | **Real items we created by hand** through our connectors for the demo. The dashboard's tracking rows come from a demo mapping file. Lantern's own Jira and Calendar hooks are tested against fakes only |
+
+![The Lantern tasks on our test Jira board, with avatars blurred](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-jira-board-full.png)
+
+![The Lantern follow-ups in Google Calendar, with personal details blurred](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/proof-google-calendar-full.png)
+
+## A ward has no free hands
+
+Every staff command in Lantern is one short, speakable line, designed for [Wispr Flow](https://wisprflow.ai), which works in any text box with no integration code: `CONFIRM Case 17`. `HANDOFF Case 17 open: confirm she ate without nausea`. `REMIND Case 17 in 20 min check she ate`. Whisper Mode fits a 7:00 handoff beside sleeping patients.
+
+And voice changes nothing about power. **Dictation is just a faster keyboard.** A whispered `DECIDE` from a nurse is refused exactly like a typed one, because Lantern checks who posted, not how the words got there.
+
+![How Wispr Flow fits Lantern](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-wispr-flow.png)
+
+## Why this only works on Switch
+
+Take Switch away and you have a chatbot and a database. Switch gives you what a ward actually needs:
+
+- **Membership as a privacy model.** Which rooms an agent may enter is a setting, not a prompt it might ignore.
+- **Agents under their own names, in the staff's own rooms,** answering in the same threads as the people, so every step can be read and audited.
+- **One agent across several rooms,** so a case can cross from the nurse station to the doctor and come back.
+- **Any coding agent.** Our rebuilt agents run on OpenCode in Switch Console.
+
+What it cost us to learn:
+
+| What happened | Why | The fix |
+| --- | --- | --- |
+| Agents ignored everything we typed | Switch ignores the Mattermost admin account | Chat as a normal user |
+| Couldn't register a custom agent from a script | Console 0.40.1 had no page for an Agent Protocol key | A normal bot account and the REST API |
+| The service lost threads agents had started | Switch message ids and Mattermost post ids differ | The service starts every case thread itself and stores both |
+| A human @mention worked, a bot's did not | Addressing rules treat them differently | Test the bot path, not just the human path |
+| Agents stopped answering at the worst moment | Not found yet; account linking and addressing are the suspects | Keep every rule outside the agents |
+
+## Don't trust us. Check.
 
 | Claim | Evidence |
 | --- | --- |
-| 98 automated tests pass, no network | [`recordings/tests.txt`](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/recordings/tests.txt) ends `Ran 98 tests in 4.967s · OK` |
-| A nurse's `DECIDE` is refused and the chart stays put | `tests/test_must_pass.py`, plus the "refused by code" count and Command audit on the dashboard |
-| A quote that isn't in the patient's message is rejected | `tests/test_must_pass.py` (quote must be an exact substring of the original post) |
-| Only room service can close a tray task | `DONE` check in `lantern/service.py`; refused in the run (`scripts/ward_scenarios.py`) |
-| No agent is in any patient room | `config/roles.yaml` room membership; `patient-102`'s account gets 403 reading `patient-101` |
-| Same run, step by step | [`recordings/final/cutlist.md`](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/recordings/final/cutlist.md) and `shotlist_actual.md` |
-| Real Jira and Calendar items | the screenshots above (fictional data) |
+| 98 automated tests pass, no network needed | [`recordings/tests.txt`](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/recordings/tests.txt) |
+| A nurse's `DECIDE` is refused, the chart holds | `tests/test_must_pass.py`, the dashboard's Command audit |
+| Invented patient quotes are rejected | `tests/test_must_pass.py` |
+| Only room service closes a tray task | The `DONE` check in `lantern/service.py` |
+| Every cut, speed change and insert in the video | [`recordings/final/cutlist.md`](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/recordings/final/cutlist.md) |
 
-Reproduce it:
+Run it yourself in under a minute:
 
 ```bash
 git clone https://github.com/sivasuryachandran/Lantern && cd Lantern
 python3 -m venv .venv && .venv/bin/pip install pyyaml
-.venv/bin/python -m unittest discover -s tests        # 98 tests, no network
-.venv/bin/python scripts/demo_offline.py              # the whole Case 17 flow, no Mattermost
+.venv/bin/python -m unittest discover -s tests   # 98 tests
+.venv/bin/python scripts/demo_offline.py         # Case 17, no Mattermost needed
 ```
 
-With a local Mattermost (Switch Console runs one for you), `scripts/start.sh` starts the record service and dashboard on `127.0.0.1:8099`, and `scripts/ward_scenarios.py` plays the human roles for a full day on the ward.
+## What this doesn't claim
 
-## What we learned
+Lantern is not connected to a hospital or an EHR. Its clinical safety is unvalidated, and no nurse has reviewed it yet: we [wrote the questions](https://github.com/sivasuryachandran/Lantern/blob/marketing-assets/docs/NURSE_REVIEW.md) and ran out of time. That is the first thing we'd fix, followed by getting the Switch agents answering end to end, so the next recording needs no stand-ins.
 
-1. **Room membership is your privacy model.** Switch makes it a setting.
-2. **Agents are great at noticing and carrying, not deciding.** Every write that matters goes through deterministic checks.
-3. **`@mention`s between agents are a real workflow primitive.** intake → care-coordinator → doctor is just chat, so people can read and audit every step.
-4. **Test the bot path, not just the human path.** A human `@mention` waking an agent doesn't prove a service-posted message will.
-5. **Show the posts, not just the dashboard.** If a card can't be traced to a post, it shouldn't be there.
+One rule shaped all of it, and we would build it the same way again.
 
-## What we'd do next
-
-Put it in front of nurses (which discrepancies are worth surfacing, and which are noise). Read a real record, read-only, under proper governance: the chart stays the authority on orders and Lantern owns only concerns, decisions and follow-up ownership. One-tap Mattermost buttons for `CONFIRM` and `ACCEPT` with platform-verified identity. And get the Switch agents answering Mattermost end to end, so the next recording needs no stand-ins.
-
-One shift, four patients, nine rooms. A doctor makes the decision and the next nurse accepts the work. Switch is where the collaboration happens. Lantern keeps the trail.
-
-## Sources
-
-- [Switch](https://github.com/sandbox-quantum/switch)
-- The Joint Commission, *Sentinel Event Alert 58: Inadequate hand-off communication*
-- AHRQ PSNet summary of Sentinel Event Alert 58
+**The agents are allowed to be wrong, because they are not allowed to decide.**
