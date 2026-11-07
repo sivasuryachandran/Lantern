@@ -1,4 +1,4 @@
-/* Fictional sample data: cases 14-16 are the seeded history, Case 17 is from a local run with scripted stand-in agents. */
+/* Fictional sample data: cases 14-16 are the seeded history; Case 17 (patient 102, left open for the doctor and handed to nurse-ben) and Case 18 (patient 101) come from a local run with scripted stand-in agents. */
 window.LANTERN_CASES=[
  {
   "id": 14,
@@ -125,6 +125,50 @@ window.LANTERN_CASES=[
  },
  {
   "id": 17,
+  "patient": "102",
+  "state": "CONFIRMED_CONFLICT",
+  "topic": "activity",
+  "quote": "The nurse said I can walk to the bathroom on my own now",
+  "says": "believes walking alone is allowed",
+  "order": "ord-activity-1",
+  "version": 1,
+  "owner": "nurse-ben",
+  "events": [
+   {
+    "kind": "draft",
+    "actor": "intake",
+    "text": "possible discrepancy, unverified: \"The nurse said I can walk to the bathroom on my own now\" vs ord-activity-1 (assist required)"
+   },
+   {
+    "kind": "nurse",
+    "actor": "nurse-ana",
+    "text": "confirmed the patient believes the order allows it: \"The nurse said I can walk to the bathroom on my own now\""
+   },
+   {
+    "kind": "agent",
+    "actor": "care-coordinator",
+    "text": "claim check: 1 of 1 cited facts verified"
+   },
+   {
+    "kind": "given",
+    "actor": "nurse-ana",
+    "text": "pain relief (fictional) given at 06:05 (recorded by nurse-ana; order unchanged)"
+   },
+   {
+    "kind": "handoff",
+    "actor": "nurse-ana",
+    "text": "handed off, still open: awaiting Dr. Lee; fall risk, assist to bathroom"
+   },
+   {
+    "kind": "task",
+    "actor": "nurse-ben",
+    "text": "accepted the follow-up; owner is now nurse-ben"
+   }
+  ],
+  "decision": []
+ },
+ {
+  "id": 18,
   "patient": "101",
   "state": "HANDED_OFF",
   "topic": "diet",
@@ -163,6 +207,11 @@ window.LANTERN_CASES=[
     "kind": "task",
     "actor": "record-service",
     "text": "follow-up owner: nurse-ana"
+   },
+   {
+    "kind": "service",
+    "actor": "record-service",
+    "text": "room task T-101-D18 opened for room service: Update the tray: diet: NPO -> regular (Case 18)"
    },
    {
     "kind": "given",

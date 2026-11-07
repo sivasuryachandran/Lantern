@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Built on Switch · Lantern</title>
+<meta name="description" content="How Lantern uses Switch: rooms and membership, agents in staff rooms, threads and @mentions. What we verified and what we did not use.">
+<meta name="theme-color" content="#0A101C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 48'%3E%3Cpath d='M8 12h14l2 22H6z' fill='%23F5B544'/%3E%3Cpath d='M8 12l7-6 7 6' fill='none' stroke='%23F5B544' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+<div class="wrap">
+  <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
+  <nav class="nav-links" id="navlinks" aria-label="Main">
+    <a href="how-it-works.html">How it works</a>
+    <a href="built-on-switch.html" aria-current="page">Built on Switch</a>
+    <a href="cases.html">Cases</a>
+    <a href="technical.html">Technical</a>
+    <a href="about.html">About</a>
+    <a href="index.html#film">Watch concept film</a>
+    <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <span class="badge">Fictional data · not for clinical use</span>
+    <a class="gh" href="https://github.com/sivasuryachandran/Lantern" aria-label="Lantern on GitHub"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.200 1.900.9 2.300.7.1-.5.3-.9.5-1.100-1.800-.2-3.600-.9-3.600-4 0-.9.3-1.600.8-2.100-.1-.2-.4-1 .1-2.100 0 0 .7-.2 2.200.8a7.500 7.500 0 0 1 4 0c1.500-1 2.200-.8 2.200-.8.4 1.100.2 1.900.1 2.100.5.6.8 1.300.8 2.100 0 3.100-1.900 3.800-3.600 4 .3.3.6.8.6 1.500v2.200c0 .2.1.5.6.4A8 8 0 0 0 8 0z"/></svg>GitHub</a>
+  </div>
+  <button class="menu-btn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+</div>
+<div class="m-strip"><span class="badge">Fictional data · not for clinical use</span></div>
+</header>
+
+<main id="main">
+<section class="page-hero"><div class="wrap">
+  <p class="eyebrow">Built on Switch</p>
+  <h1>Agents in the room, people in the room, Switch in between.</h1>
+  <p class="lead">Lantern is a Switch room group in spirit: two AI agents, <b>intake</b> and <b>care-coordinator</b>, work in staff rooms next to nurses and a doctor. Switch decides who is in which room; a small service keeps the record exact.</p>
+</div></section>
+
+<section style="padding-top:8px" aria-labelledby="flow">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">The shape of it</p><h2 id="flow">An AI agent and a team, connected by Switch, get a real task done.</h2></div>
+    <div class="rooms rooms3 reveal">
+      <div class="tile"><h3 style="font-family:var(--sans);font-size:1rem;letter-spacing:.1em;color:var(--muted)">AI AGENTS</h3><div class="who"><span class="chip cyan">intake</span><span class="chip cyan">care-coordinator</span></div><p class="muted" style="margin-top:12px;font-size:.9rem">Staff rooms only.</p></div>
+      <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5"/></svg></div>
+      <div class="tile" style="border-color:#17586a"><h3 style="font-family:var(--sans);font-size:1.4rem;color:var(--cyan)">Switch</h3><p class="muted" style="margin:0;font-size:.9rem">rooms · threads · roles · addressing, on Mattermost</p></div>
+      <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5"/></svg></div>
+      <div class="tile"><h3 style="font-family:var(--sans);font-size:1rem;letter-spacing:.1em;color:var(--muted)">REAL TASKS, DONE</h3><p class="muted" style="margin:0;font-size:.9rem">A case resolved by the doctor, a tray delivered, a dose recorded, a shift handed over.</p></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="tbl">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">What we use</p><h2 id="tbl">Switch feature by feature.</h2>
+    <p class="lead">Only what the build shows. Screenshots of the Console are not published here yet.</p></div>
+    <div class="reveal"><div class="tbl-wrap"><table class="tbl "><thead><tr><th>Switch feature</th><th>How Lantern uses it</th><th>Where to see it</th></tr></thead><tbody><tr><td>Rooms and membership</td><td>Ten private rooms. No agent is a member of any patient room; patient 102 cannot open patient 101's.</td><td>run locally; <span class=mono>scripts/live_e2e.py</span>, 403 on the patient room</td></tr><tr><td>Agents in a room</td><td>intake in nurse-station; care-coordinator in nurse-station and doctor-review.</td><td>agents created in Switch Console per <span class=mono>docs/SWITCH_SETUP.md</span>; a live run with the real agents was reported on Nov 4 and is in the README</td></tr><tr><td>Threads</td><td>Every case has a nurse thread and a doctor thread; decisions only count as replies in the doctor thread.</td><td>built and tested</td></tr><tr><td>@mentions</td><td>record-bot mentions @intake and @care-coordinator to hand them work; they answer in the thread.</td><td>built; agent replies seen with the real agents per the README</td></tr><tr><td>Roles by user id</td><td>The service matches people by Mattermost user id, never display name.</td><td>built and tested</td></tr><tr><td>Room groups, templates, room documents</td><td>Not used in this build. We did not create a ward template or a room document.</td><td>none</td></tr></tbody></table></div></div>
+  </div>
+</section>
+
+<section aria-labelledby="rep">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Reproduce it</p><h2 id="rep">From a clean machine.</h2></div>
+    <div class="card reveal"><ol style="margin:0;padding-left:20px">
+      <li>Clone the repo, <span class="mono">python3 -m venv .venv &amp;&amp; .venv/bin/pip install pyyaml</span>, run the tests.</li>
+      <li>Start Switch and its Mattermost; create <b>intake</b> and <b>care-coordinator</b> in Switch Console with the instructions in <span class="mono">docs/agents/</span>.</li>
+      <li>Run <span class="mono">scripts/setup_mattermost.py</span> to create the users and the ten rooms from <span class="mono">config/roles.yaml</span>.</li>
+      <li>Start the service with <span class="mono">scripts/start.sh</span>; open <span class="mono">http://127.0.0.1:8099/</span>.</li>
+      <li>Play the humans with <span class="mono">scripts/demo_driver.py</span> (add <span class="mono">--real</span> when the real agents are in the rooms).</li>
+    </ol></div>
+  </div>
+</section>
+
+<section aria-labelledby="got">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Gotchas we hit</p><h2 id="got">Things that cost us time.</h2></div>
+    <div class="grid2" style="gap:18px">
+      <div class="card reveal"><h3>Switch ids are not Mattermost ids</h3><p class="muted">Switch's own message ids (they start with <span class="mono">sw_</span>) differ from Mattermost's, so intake looks up the real forwarded id through a small tool.</p></div>
+      <div class="card reveal"><h3>Progress posts look like claims</h3><p class="muted">Switch's "Working…" posts had to be ignored by the receipt check.</p></div>
+      <div class="card reveal"><h3>Personal access tokens can be off</h3><p class="muted">Our local Mattermost had them disabled, so record-bot logs in and uses a session token.</p></div>
+      <div class="card reveal"><h3>Agents answer where they are told</h3><p class="muted">care-coordinator had to be told to reply inside the case thread, not the channel.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+<div class="wrap">
+  <div>
+    <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
+    <p>Built for the Flip the Switch hackathon: WeMakeDevs × DevTools Academy × Switch. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+  </div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
+    <li><a href="#" data-placeholder>Demo video [LINK]</a></li>
+    <li><a href="#" data-placeholder>Blog [LINK]</a></li>
+  </ul>
+</div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

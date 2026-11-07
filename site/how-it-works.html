@@ -18,6 +18,7 @@
   <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
   <nav class="nav-links" id="navlinks" aria-label="Main">
     <a href="how-it-works.html" aria-current="page">How it works</a>
+    <a href="built-on-switch.html">Built on Switch</a>
     <a href="cases.html">Cases</a>
     <a href="technical.html">Technical</a>
     <a href="about.html">About</a>
@@ -64,13 +65,13 @@
 </article>
 <article class="step" data-i="5" aria-labelledby="s5">
   <div class="num" aria-hidden="true">6</div>
-  <div><span class="room">nurse-station</span><h3 id="s5">The next shift owns it</h3><p class="lead" style="font-size:1.05rem">Shift change.</p><span class="cmd">GIVEN</span> <span class="cmd">HANDOFF</span> <span class="cmd">ACCEPT Case 17</span><p class="muted" style="margin-top:12px">The outgoing nurse records what was given and what is still open. The incoming nurse accepts. The patient's owner line becomes "Following up: nurse-ben".</p></div>
+  <div><span class="room">nurse-station</span><h3 id="s5">The next shift owns it</h3><p class="lead" style="font-size:1.05rem">Shift change.</p><span class="cmd">GIVEN</span> <span class="cmd">HANDOFF</span> <span class="cmd">ACCEPT Case 17</span><p class="muted" style="margin-top:12px">The owner records what was given and what is still open, for a resolved case or one still waiting on the doctor. The incoming nurse accepts and owns it; a case that was waiting on the doctor stays waiting. The patient's owner line becomes "Following up: nurse-ben".</p></div>
 </article>
 </div></div></section>
 
 <section aria-labelledby="map">
   <div class="wrap">
-    <div class="sec-head reveal"><p class="eyebrow">Room map</p><h2 id="map">Four rooms. Two are locked to agents.</h2></div>
+    <div class="sec-head reveal"><p class="eyebrow">Room map</p><h2 id="map">Ten rooms. Four are locked to agents.</h2></div>
     <div class="rooms reveal">
       <div class="tile locked"><h3>patient-101</h3><p class="muted" style="margin:0">The patient's own room.</p><div class="lock"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg> no agents</div></div>
       <div class="arrow" aria-label="then"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5"/></svg></div>
@@ -80,6 +81,7 @@
       <div class="arrow off" aria-hidden="true"></div>
       <div class="tile locked"><h3>patient-102</h3><p class="muted" style="margin:0">Another patient. Cannot open patient-101.</p><div class="lock"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg> no agents</div></div>
     </div>
+    <p class="rooms-note"><b>Also in the ward:</b> patient-103 and patient-104 (locked the same way), and three staff feeds written by the record service: <span class="mono">orders</span> (every chart change), <span class="mono">medication</span> (every dose given, apart from orders) and <span class="mono">room-service</span> (tray and turnover tasks that Sam and Rita close with <span class="mono">DONE</span>).</p>
     <p class="rooms-note">The answer returns to the patient only through record-bot, which sends a fixed template or the doctor's own words. Isolation is Switch room membership, not a prompt.</p>
   </div>
 </section>

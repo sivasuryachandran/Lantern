@@ -117,7 +117,7 @@ Calendar and Jira are called directly by the record service rather than as Switc
 
 ## Verification status
 
-- `python -m unittest discover -s tests`: 64 tests, no network.
+- `python -m unittest discover -s tests`: 70 tests, no network.
 - `scripts/live_e2e.py`: Case 17 against a real Mattermost with scripted stand-ins for the agents.
 - **Live with the real Switch agents** (Switch Console 0.40.1, Mattermost bundled, both agents on Claude Code, Nov 4):
   - `scripts/check_intake.py`: all three casual phrasings opened a possible-discrepancy case.

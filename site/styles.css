@@ -266,3 +266,8 @@ details.case summary::-webkit-details-marker{display:none}
 .kind{font:700 .66rem/1 var(--sans);letter-spacing:.1em;color:var(--amber);white-space:nowrap}
 .kind.k-said{color:var(--ink)}.kind.k-nurse{color:var(--cyan)}.kind.k-decision{color:var(--green)}.kind.k-handoff,.kind.k-task{color:var(--violet)}
 @media(max-width:760px){details.case summary{grid-template-columns:1fr}}
+
+.rooms3{grid-template-columns:1fr 36px 1fr 36px 1fr}
+@media(max-width:900px){.rooms3{grid-template-columns:1fr}}
+.nav-links a{white-space:nowrap}
+.nav-links{gap:2px}

@@ -32,10 +32,10 @@ Each ward room (`4W-101` to `4W-104`) records who is there now, **who was there 
 | receipt-checker | compares each cited fact to the lookup log: ✓ verified, ⚠ unverified or stale | built |
 | room-ledger | read-only room and task state (`/api/rooms`, `/api/tasks`) | built |
 | task-tracker | opens a room task when a decision needs follow-up (a tray change), closes it on `DONE`, mirrors it to Jira if configured | built (Jira unit-tested only) |
-| scheduler | Google Calendar follow-up event on a resolved case | built (unit-tested only, not run live) |
+| scheduler | Google Calendar follow-up event on a resolved case; opt-in overdue reminders for room tasks | built (Calendar unit-tested only; reminders tested with a fake clock) |
 | audit-log | every accepted, rejected and ignored command with the reason | built |
 
-**Designed Switch agents (instructions written, none created in Console, none run):** `housekeeping-coordinator`, `dietary-coordinator`, `pharmacy-liaison`, `bed-manager`, `discharge-planner`, `handoff-briefer`. See `docs/agents/`.
+Their code-level behaviors (`READY`, `DISCHARGE`, overdue reminders, the double-entry warning) are built as record-service commands. **Designed Switch agents (instructions written, none created in Console, none run) that would use them:** `housekeeping-coordinator`, `dietary-coordinator`, `pharmacy-liaison`, `bed-manager`, `discharge-planner`, `handoff-briefer`. See `docs/agents/`.
 
 ## Scenarios
 
@@ -50,12 +50,12 @@ Each ward room (`4W-101` to `4W-104`) records who is there now, **who was there 
 | 7 | Nurse tries to change an order | none | refused by code | audit row, no chart change | built |
 | 8 | Stale or uncited fact from an agent | receipt-checker | the doctor sees ⚠ | lookup log, audit | built |
 | 9 | Patient asks about another patient's case | record-bot | refused | fixed template, audit | built |
-| 10 | Turnover: which cleanup tasks are done or open for the room's previous stay | room-ledger | room service closes tasks | rooms and tasks tables, dashboard panel | built (read and close); creating tasks at discharge is designed |
-| 11 | New patient assigned to a room whose previous occupant had precautions | bed-manager | charge nurse | would warn if turnover for that precaution is still open | designed |
-| 12 | A turnover task stays open too long | housekeeping-coordinator | room service or charge nurse | escalation message | designed |
+| 10 | Turnover: which cleanup tasks are done or open for the room's previous stay | room-ledger | room service closes tasks | rooms and tasks tables, dashboard panel | built |
+| 11 | Is a room ready for the next patient, given its previous occupant's precautions | `READY <room>` in nurse-station (code) | charge nurse | answers from open tasks and precautions; `ready` flag in `/api/rooms` | built as a command; the bed-manager agent that would ask it is designed |
+| 12 | A turnover task stays open too long | scheduler (code) | room service or charge nurse | one reminder per task in `room-service`; off unless `LANTERN_TASK_AGING_MIN` is set | built (opt-in, tested with a fake clock) |
 | 13 | Tray conflicts with an allergy or an NPO order | dietary-coordinator | nurse, Dr. Lee | would cite the diet order and allergy entry | designed |
-| 14 | A medicine is due or was given twice | pharmacy-liaison | pharmacist or nurse | `medication` feed | designed |
-| 15 | Discharge: follow-up, transport, room turnover | discharge-planner | doctor signs, nurse closes | tasks, calendar | designed |
+| 14 | The same medicine is recorded twice for a patient | code | nurse or pharmacist checks | a "possible double entry" line in `medication`; both entries kept | built; "due" reminders and pharmacist verification are designed |
+| 15 | Discharge: room turnover | `DISCHARGE <patient>` (nurse) | room service closes each task | five tasks in the room's checklist, a `room-service` line, Jira tasks if configured | built; follow-up scheduling and transport are designed |
 | 16 | Follow-up check after a resolved case | scheduler | the owning nurse | Calendar event | built (unit-tested only) |
 
 ## What is tracked where
