@@ -7,7 +7,7 @@ Rebuild this fresh after the event opens (Tue Nov 3, 10:31 AM PT); it takes abou
    - `intake`: nurse-station only
    - `care-coordinator`: nurse-station and doctor-review
    Their Mattermost usernames must match `config/roles.yaml` (or edit that file).
-3. Create users and the ten private rooms (four patient rooms, nurse-station, doctor-review and three write-only ward feeds) (membership comes from `config/roles.yaml`):
+3. Create users and the nine private rooms (four patient rooms, nurse-station, doctor-review and three write-only ward feeds) (membership comes from `config/roles.yaml`):
 
    ```bash
    MM_URL=http://localhost:8065 MM_ADMIN_TOKEN=<admin token> MM_TEAM=switch .venv/bin/python scripts/setup_mattermost.py
@@ -32,7 +32,7 @@ Rebuild this fresh after the event opens (Tue Nov 3, 10:31 AM PT); it takes abou
 
 ## Which Mattermost team Console sees
 
-Switch Console lists the rooms of **one** Mattermost team on its local server (its bridge user is `switchadmin`). On the demo machine that team is `blast`, so the ten Lantern rooms were created there, with `switchadmin` added to each, and every script runs with `MM_TEAM=blast`:
+Switch Console lists the rooms of **one** Mattermost team on its local server (its bridge user is `switchadmin`). On the demo machine that team is `blast`, so the nine Lantern rooms were created there, with `switchadmin` added to each, and every script runs with `MM_TEAM=blast`:
 
 ```bash
 export MM_URL=http://localhost:8065 MM_TEAM=blast LANTERN_TEST_PASSWORD=<throwaway password>

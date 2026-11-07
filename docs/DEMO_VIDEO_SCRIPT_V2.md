@@ -16,7 +16,7 @@ Tagline: **What was said. What was confirmed. Who owns what's next.**
 | REFUSED row in the patient timeline | Refusals are in **Command audit** | Show the red row in Command audit |
 | `ord-activity-1 · assist required · fall risk` for patient 102 | Added to `data/patient-102.json` | no change needed |
 | "OpenCode" | Unverified; README says Claude Code | Use whatever Switch Console shows |
-| Four rooms | **Ten rooms** (room-service staff included): patient-101 to 104, nurse-station, doctor-review, and write-only feeds **orders, medication, room-service** | New "downstream" beat below |
+| Four rooms | **Nine rooms** (room-service staff included): patient-101 to 104, nurse-station, doctor-review, and write-only feeds **orders, medication, room-service** | New "downstream" beat below |
 
 ## Pre-roll (before the camera rolls), real system only
 

@@ -1,4 +1,4 @@
-> **Superseded by [DEMO_VIDEO_SCRIPT_V2.md](DEMO_VIDEO_SCRIPT_V2.md)** for the second script. The card table below is still current except `rooms.mp4`, which is now 28 s: a Switch hub (AI agents `intake` and `care-coordinator` plus the team, through Switch, to real tasks done), then the ward's ten rooms with the three feeds and room service; `flow.mp4` now shows the Switch boundary and the orders, medication and room-service feeds.
+> **Superseded by [DEMO_VIDEO_SCRIPT_V2.md](DEMO_VIDEO_SCRIPT_V2.md)** for the second script. The card table below is still current except `rooms.mp4`, which is now 28 s: a Switch hub (AI agents `intake` and `care-coordinator` plus the team, through Switch, to real tasks done), then the ward's nine rooms with the three feeds and room service; `flow.mp4` now shows the Switch boundary and the orders, medication and room-service feeds.
 
 # 3-minute demo: script vs. the running build
 

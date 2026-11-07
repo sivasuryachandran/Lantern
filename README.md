@@ -36,7 +36,7 @@ Run it with no Mattermost at all:
 
 ## The ward's rooms
 
-All ten are private Switch/Mattermost rooms; membership is in `config/roles.yaml`.
+All nine are private Switch/Mattermost rooms; membership is in `config/roles.yaml`.
 
 | Room | Who is in it | Purpose |
 | --- | --- | --- |
