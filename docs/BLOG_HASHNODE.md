@@ -10,7 +10,7 @@ That is not a bug. It is the entire idea.
 
 %[https://youtu.be/QR7r84tyBlo]
 
-> **What you're watching: the recorded fallback.** The agents in this video are rule-based stand-ins, labelled on screen. The real Switch path, with `intake` and `care-coordinator` running as Switch agents, passed this same case three runs in a row on Nov 4. The record service, checks and refusals in the video are real. [Exactly what is real, below.](#heading-the-night-our-agents-went-quiet)
+> **What you're watching: the recorded fallback.** The agents in this video are rule-based stand-ins, labelled on screen. The real Switch path, with `intake` and `care-coordinator` running as Switch agents, passed this same case three runs in a row on Nov 4. The record service, checks and refusals in the video are real. [Exactly what is real, below.](#the-night-our-agents-went-quiet)
 
 **[Read the code](https://github.com/sivasuryachandran/Lantern)** · By Siva Surya Chandran
 
