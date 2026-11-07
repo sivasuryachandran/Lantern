@@ -64,8 +64,8 @@ Their code-level behaviors (`READY`, `DISCHARGE`, overdue reminders, the double-
 | --- | --- | --- |
 | Lantern database (SQLite) | charts, cases, events, decisions, lookups, audit, rooms, room tasks | built, tested |
 | Mattermost rooms and threads | every conversation and every feed | built, run locally |
-| Jira | one task per resolved case, and one per room task Lantern opens | built; unit-tested against a fake HTTP layer; **not run against a real Jira** |
-| Google Calendar | a follow-up event on a resolved case | built; **not run live** |
+| Jira | one task per resolved case, and one per room task Lantern opens | built; unit-tested against a fake HTTP layer; **Lantern's own hook has not run against a real Jira**. On Nov 7 Claude created seven matching tasks (KAN-4 to KAN-10) in the `lantern-demo` site through the Atlassian connector so the board shows the open work; those were not created by the service |
+| Google Calendar | a follow-up event on a resolved case | built; **Lantern's own hook has not run live**. Claude created four labeled test events (handoff, doctor decision, room service, an earlier test) on the owner's calendar through the Calendar connector |
 | Switch room documents (for example a handoff sheet) | not written by us | designed only; I have not verified Switch's room-document feature here |
 | Scheduled or recurring checks (for example aging tasks) | not built | designed |
 
