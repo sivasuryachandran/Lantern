@@ -50,7 +50,9 @@ def serve(svc, host="127.0.0.1", port=8099):
                     return self._send(403, {"error": "unknown agent"})
                 with lock:
                     fwd = svc.forwarded_id(parts[1])
-                return self._send(200, {"original_post_id": parts[1], "forwarded_post_id": fwd}) if fwd                     else self._send(404, {"error": "no forwarded message for that post"})
+                if not fwd:
+                    return self._send(404, {"error": "no forwarded message for that post"})
+                return self._send(200, {"original_post_id": parts[1], "forwarded_post_id": fwd})
             if len(parts) != 3 or parts[0] != "chart":
                 return self._send(404, {"error": "use /chart/<patient>/<entry>?agent=<name>"})
             if key and self.headers.get("X-Lookup-Key") != key:

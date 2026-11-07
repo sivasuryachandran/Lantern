@@ -4,7 +4,7 @@
 - [ ] intake and care-coordinator created in Switch Console, usernames match `config/roles.yaml`
 - [ ] `scripts/check_intake.py` passes (three casual phrasings) against the real agent
 - [ ] `scripts/live_e2e.py` passes against the final setup
-- [ ] `python -m unittest discover -s tests` passes
+- [x] `python -m unittest discover -s tests` passes
 - [ ] Nurse review done; quote (with permission, by role) in the README "Nurse review" section and the video's last 10 seconds
 - [ ] Video: record-bot kept quiet on screen; staff scenes show agents and people in threads
 - [ ] Public repo with README: problem, 30-second GIF of Case 17, setup, room diagram, trust model, "fictional data, not for clinical use" banner
