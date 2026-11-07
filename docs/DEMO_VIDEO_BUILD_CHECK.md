@@ -1,3 +1,5 @@
+> **Superseded by [DEMO_VIDEO_SCRIPT_V2.md](DEMO_VIDEO_SCRIPT_V2.md)** for the second script. The card table below is still current except `rooms.mp4`, which is now 28 s: a Switch hub (AI agents `intake` and `care-coordinator` plus the team, through Switch, to real tasks done), then the ward's ten rooms with the three feeds and room service; `flow.mp4` now shows the Switch boundary and the orders, medication and room-service feeds.
+
 # 3-minute demo: script vs. the running build
 
 Checked against this repo (regexes in `lantern/service.py`, `scripts/demo_driver.py`, `lantern/ui.html`, `docs/agents/`). Fix the **script**, not the code.
@@ -63,7 +65,7 @@ The script prefers a human voice for the final cut; this track is for timing and
 | --- | --- | --- | --- |
 | `title.mp4` | 6.0 s | 0:06 to 0:12 cold-open title card | quote types in, chart chip, amber line pulses, "What she heard ≠ what the chart says" |
 | `brand.mp4` | 10.0 s | 0:12 to 0:24 title over the `w5_shift_change` clip | LANTERN, the tagline in three beats, six lanterns lighting; put it on top of the concept clip |
-| `rooms.mp4` | 20.0 s | 0:24 to 0:38 room map (Layout C) | the voice-over runs about 19 s at natural pace; the "2 AI agents · 4 rooms" line lands at 14.5 s |
+| `rooms.mp4` | 28.0 s | 0:24 to 0:38 room map (Layout C) | the voice-over runs about 19 s at natural pace; the "2 AI agents · 4 rooms" line lands at 14.5 s |
 | `flow.mp4` | 28.0 s | 2:22 to 2:40 technical flow | arrows build in the voice-over's order; the SQLite box pulses from 16 s while the voice describes the service; the narration is 26 s |
 | `end.mp4` | 10.0 s | 2:46 to 2:58 end card | "Agents notice. People decide. Code enforces.", the wordmark, then the disclosure line (it says human roles were played from `scripts/demo_driver.py`) |
 

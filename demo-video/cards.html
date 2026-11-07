@@ -50,21 +50,47 @@ html,body{margin:0;background:#000}
       <span id="p1" class="serif" style="opacity:0">What was said.</span> <span id="p2" class="serif" style="opacity:0;margin:0 14px">What was confirmed.</span> <span id="p3" class="serif" style="opacity:0">Who owns what's next.</span></div>
   </div>
 
-  <!-- 3 rooms: layout C -->
+  <!-- 3 rooms: layout C. Phase A: agents + team -> Switch -> real tasks. Phase B: the ward's ten rooms -->
   <div id="c-rooms" class="card">
-    <div id="rtitle" class="abs serif" style="left:0;right:0;top:90px;text-align:center;font-size:58px">2 AI agents · 4 rooms · agents never enter patient rooms</div>
-    <div id="r1" class="tile panel" style="left:130px;top:230px;width:430px;height:250px;border-style:dashed"><h3>patient-101</h3><p>bedside tablet</p><div class="rlock" style="margin-top:16px;color:var(--green);font-weight:700;font-size:24px"><svg width="26" height="26" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:8px"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>no agents</div></div>
-    <div id="r2" class="tile panel" style="left:130px;top:530px;width:430px;height:250px;border-style:dashed"><h3>patient-102</h3><p>bedside tablet</p><div class="rlock" style="margin-top:16px;color:var(--green);font-weight:700;font-size:24px"><svg width="26" height="26" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:8px"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>no agents</div></div>
-    <div id="r3" class="tile panel" style="left:760px;top:330px;width:500px;height:300px"><h3>nurse-station</h3><p>staff room</p>
-      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Ana</span><span class="pill person">Ben</span><span class="pill agent a1">intake</span><span class="pill agent a2">care-coordinator</span></div></div>
-    <div id="r4" class="tile panel" style="left:1330px;top:330px;width:470px;height:300px"><h3>doctor-review</h3><p>staff room</p>
-      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Dr. Lee</span><span class="pill agent a3">care-coordinator</span></div></div>
-    <div id="rsw" class="abs" style="left:1000px;top:230px;width:560px;text-align:center"><span class="pill agent" style="font-size:30px">Switch</span><div style="font-size:22px;color:var(--muted);margin-top:6px">agents join staff rooms only</div></div>
-    <svg class="abs" width="1920" height="1080" style="left:0;top:0">
-      <path id="rl1" d="M1010 292 V330 M1560 292 V330" stroke="#4CC9F0" stroke-width="3" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
-      <g id="rdots" stroke="#F5B544" stroke-width="3" stroke-dasharray="4 10" fill="none"><path d="M560 480 V820" /><path d="M560 780 V820"/><path d="M1010 630 V820"/><path d="M1565 630 V820"/></g>
-    </svg>
-    <div id="rsvc" class="abs node svc" style="left:420px;top:820px;width:1200px;height:130px"><b>Lantern service</b><span>code, not AI · SQLite record · forwards, opens case threads, logs lookups, checks decisions</span></div>
+    <div id="hub">
+      <div id="htitle" class="abs serif" style="left:0;right:0;top:80px;text-align:center;font-size:64px">Switch turns agents into teammates</div>
+      <div id="hAg" class="abs panel" style="left:110px;top:250px;width:520px;height:330px;padding:28px 34px">
+        <div style="font-size:24px;color:var(--muted);letter-spacing:.12em">AI AGENTS</div>
+        <div style="margin-top:22px"><span class="pill agent" style="font-size:32px">intake</span></div>
+        <div style="margin-top:14px"><span class="pill agent" style="font-size:32px">care-coordinator</span></div>
+        <div style="margin-top:18px;font-size:22px;color:var(--muted)">staff rooms only</div></div>
+      <div id="hTeam" class="abs panel" style="left:110px;top:620px;width:520px;height:300px;padding:28px 34px">
+        <div style="font-size:24px;color:var(--muted);letter-spacing:.12em">YOUR TEAM</div>
+        <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Nurse Ana</span><span class="pill person">Nurse Ben</span><span class="pill person">Dr. Lee</span><span class="pill person">Sam · room service</span><span class="pill person">patients</span></div></div>
+      <div id="hSw" class="abs node agent" style="left:760px;top:430px;width:420px;height:250px;padding:24px 28px"><b style="font-size:46px">Switch</b><span style="font-size:24px;margin-top:10px">rooms · threads · roles · addressing</span><span style="font-size:22px">Mattermost</span></div>
+      <div id="hOut" class="abs panel" style="left:1310px;top:330px;width:500px;height:430px;padding:28px 34px">
+        <div style="font-size:24px;color:var(--muted);letter-spacing:.12em">REAL TASKS, DONE</div>
+        <div style="margin-top:22px;font-size:30px;line-height:1.5">Case resolved by the doctor<br>Tray delivered, recorded<br>Medicine given, recorded<br>Shift handed to the next nurse</div></div>
+      <svg class="abs" width="1920" height="1080" style="left:0;top:0">
+        <path id="h1" d="M630 415 C 700 415, 700 520, 760 520" stroke="#4CC9F0" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+        <path id="h2" d="M630 770 C 700 770, 700 600, 760 600" stroke="#E8EDF5" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+        <path id="h3" d="M1180 555 H1310" stroke="#F5B544" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>
+    </div>
+    <div id="ward">
+      <div id="rtitle" class="abs serif" style="left:0;right:0;top:50px;text-align:center;font-size:54px">One ward: ten rooms, two AI agents, agents never in a patient room</div>
+      <div class="abs mono" style="left:90px;top:150px;font-size:22px;color:var(--muted);letter-spacing:.1em">PATIENT ROOMS</div>
+      <div class="abs mono" style="left:700px;top:150px;font-size:22px;color:var(--muted);letter-spacing:.1em">STAFF ROOMS</div>
+      <div class="abs mono" style="left:1330px;top:150px;font-size:22px;color:var(--muted);letter-spacing:.1em">WARD FEEDS</div>
+      <div id="p1" class="tile panel" style="left:90px;top:190px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-101</h3><p style="font-size:22px">no agents</p></div>
+      <div id="p2" class="tile panel" style="left:90px;top:345px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-102</h3><p style="font-size:22px">no agents</p></div>
+      <div id="p3" class="tile panel" style="left:90px;top:500px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-103</h3><p style="font-size:22px">no agents</p></div>
+      <div id="p4" class="tile panel" style="left:90px;top:655px;width:470px;height:130px;border-style:dashed;padding:18px 26px"><h3 style="font-size:30px">patient-104</h3><p style="font-size:22px">no agents</p></div>
+      <div id="r3" class="tile panel" style="left:700px;top:190px;width:540px;height:290px;padding:24px 28px"><h3 style="font-size:32px">nurse-station</h3>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Ana</span><span class="pill person">Ben</span><span class="pill agent">intake</span><span class="pill agent">care-coordinator</span></div></div>
+      <div id="r4" class="tile panel" style="left:700px;top:500px;width:540px;height:285px;padding:24px 28px"><h3 style="font-size:32px">doctor-review</h3>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill person">Dr. Lee</span><span class="pill person">Ana</span><span class="pill agent">care-coordinator</span></div></div>
+      <div id="f1" class="tile panel" style="left:1330px;top:190px;width:500px;height:150px;padding:18px 26px"><h3 style="font-size:30px">orders</h3><p style="font-size:22px">every chart change</p></div>
+      <div id="f2" class="tile panel" style="left:1330px;top:365px;width:500px;height:150px;padding:18px 26px"><h3 style="font-size:30px">medication</h3><p style="font-size:22px">every dose given</p></div>
+      <div id="f3" class="tile panel" style="left:1330px;top:540px;width:500px;height:245px;padding:18px 26px"><h3 style="font-size:30px">room-service</h3><p style="font-size:22px">tray and turnover tasks</p>
+        <div style="margin-top:14px;display:flex;gap:10px"><span class="pill person" style="font-size:22px">Sam</span><span class="pill person" style="font-size:22px">Rita</span></div></div>
+      <div id="rsvc" class="abs node svc" style="left:90px;top:850px;width:1740px;height:130px"><b>Lantern service</b><span>code, not AI · SQLite record · forwards, opens case threads, logs lookups, checks decisions, opens and closes room tasks</span></div>
+      <svg class="abs" width="1920" height="1080" style="left:0;top:0"><g id="rdots" stroke="#F5B544" stroke-width="3" stroke-dasharray="4 10" fill="none"><path d="M325 785 V850"/><path d="M970 785 V850"/><path d="M1580 785 V850"/></g></svg>
+    </div>
   </div>
 
   <!-- 4 flow: technical diagram -->
@@ -79,7 +105,7 @@ html,body{margin:0;background:#000}
     <div id="fF" class="node agent" style="left:1400px;top:640px;width:380px;height:100px"><b>care-coordinator</b><span>via Switch · cited facts</span></div>
     <div id="fG" class="node" style="left:740px;top:790px;width:420px;height:110px"><b>doctor-review thread</b><span>Dr. Lee: DECIDE · nurse-ben: ACCEPT</span></div>
     <div id="fH" class="node" style="left:90px;top:790px;width:550px;height:110px"><b style="white-space:nowrap">patient gets the doctor's words</b><span>owner line updates</span></div>
-    <div id="fSw" class="abs" style="left:1330px;top:112px;width:520px;text-align:center"><span class="pill agent" style="font-size:24px;white-space:nowrap">Switch: rooms and replies</span></div>
+    <div id="fSw" class="abs" style="left:1330px;top:112px;width:520px;text-align:center"><span class="pill agent" style="font-size:24px;white-space:nowrap">Switch · rooms, threads, roles</span></div>
     <svg class="abs" width="1920" height="1080" style="left:0;top:0;overflow:visible">
       <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>
       <path id="a1" d="M500 265 H740" stroke="#E8EDF5" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
@@ -89,8 +115,14 @@ html,body{margin:0;background:#000}
       <path id="a5" d="M1590 590 V640" stroke="#E8EDF5" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
       <path id="a6" d="M1400 700 H1280 Q1160 700 1160 790" stroke="#4CC9F0" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
       <path id="a7" d="M950 790 V580" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="a9" d="M740 470 H650" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
       <path id="a8" d="M740 845 H640" stroke="#F5B544" stroke-width="4" fill="none" marker-end="url(#ah)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
     </svg>
+    <div id="fSwBox" class="abs" style="left:1370px;top:150px;width:440px;height:610px;border:3px dashed #17586a;border-radius:28px;opacity:0"></div>
+    <div id="fFeeds" class="abs" style="left:90px;top:400px;width:560px">
+      <div class="node" style="position:relative;margin-bottom:16px"><b>orders</b><span>chart v3 → v4, who decided</span></div>
+      <div class="node" style="position:relative;margin-bottom:16px"><b>medication</b><span>doses given, apart from orders</span></div>
+      <div class="node" style="position:relative"><b>room-service</b><span>tray task · Sam closes with DONE</span></div></div>
     <div id="fleg" class="abs" style="left:120px;top:960px;font-size:24px;color:var(--muted)"><span style="color:var(--ink)">●</span> human post &nbsp; <span style="color:var(--cyan)">●</span> agent path &nbsp; <span style="color:var(--amber)">●</span> Lantern service check</div>
   </div>
 
@@ -143,14 +175,18 @@ const SCENES={
   show('bword',ease(ramp(t,.8,2.4)));
   show('p1',ease(ramp(t,3.0,4.0)));show('p2',ease(ramp(t,4.6,5.6)));show('p3',ease(ramp(t,6.2,7.2)));
   bl.forEach((l,i)=>paint(l,ease(ramp(t,3.0+i*.6,3.8+i*.6))));},
- rooms(t){ // 20 s
-  $('c-rooms').style.opacity=fade(t,0,20,.5,.6);
-  show('r1',eo(ramp(t,.4,1.2)));show('r2',eo(ramp(t,1.2,2.0)));show('r3',eo(ramp(t,2.6,3.4)));show('r4',eo(ramp(t,3.8,4.6)));
-  document.querySelectorAll('#c-rooms .rlock').forEach(e=>e.style.opacity=ease(ramp(t,1.8,2.6)));
-  const ag=[['a1',6.0],['a2',6.6],['a3',7.2]];ag.forEach(([c,s])=>document.querySelectorAll('#c-rooms .'+c).forEach(e=>{e.style.opacity=ease(ramp(t,s,s+.6))}));
-  show('rsw',ease(ramp(t,8.0,8.8)));draw('rl1',eo(ramp(t,8.4,9.6)));
-  show('rsvc',ease(ramp(t,11.5,12.5)));$('rdots').style.opacity=ease(ramp(t,12.5,14));
-  show('rtitle',ease(ramp(t,14.5,15.8)));},
+ rooms(t){ // 28 s
+  $('c-rooms').style.opacity=fade(t,0,28,.5,.6);
+  const hub=1-ease(ramp(t,7.4,8.6)), ward=ease(ramp(t,8.0,9.2));
+  $('hub').style.opacity=hub;$('ward').style.opacity=ward;
+  show('htitle',ease(ramp(t,.3,1.1)));show('hAg',ease(ramp(t,1.0,1.8)));show('hTeam',ease(ramp(t,1.6,2.4)));
+  show('hSw',ease(ramp(t,3.0,3.8)));draw('h1',eo(ramp(t,3.6,4.6)));draw('h2',eo(ramp(t,4.0,5.0)));
+  show('hOut',ease(ramp(t,5.2,6.0)));draw('h3',eo(ramp(t,5.4,6.4)));
+  ['p1','p2','p3','p4'].forEach((id,i)=>show(id,eo(ramp(t,9.0+i*.5,9.8+i*.5))));
+  show('r3',eo(ramp(t,11.4,12.2)));show('r4',eo(ramp(t,12.4,13.2)));
+  ['f1','f2','f3'].forEach((id,i)=>show(id,eo(ramp(t,14.4+i*.7,15.2+i*.7))));
+  show('rsvc',ease(ramp(t,17.5,18.5)));$('rdots').style.opacity=ease(ramp(t,18.5,20));
+  show('rtitle',ease(ramp(t,8.6,9.6)));},
  flow(t){ // 28 s
   $('c-flow').style.opacity=fade(t,0,28,.5,.7);
   show('ftitle',ease(ramp(t,.2,1.0)));show('fA',ease(ramp(t,.8,1.6)));show('fB',ease(ramp(t,1.0,1.8)));show('fBdb',ease(ramp(t,15.6,16.6)));
@@ -163,7 +199,7 @@ const SCENES={
   show('fG',ease(ramp(t,12.0,12.8)));draw('a6',eo(ramp(t,12.2,13.4)));
   draw('a7',eo(ramp(t,14.0,15.2)));
   show('fH',ease(ramp(t,17.2,18.0)));draw('a8',eo(ramp(t,17.4,18.4)));
-  show('fleg',ease(ramp(t,2,3)));
+  show('fleg',ease(ramp(t,2,3)));show('fSwBox',ease(ramp(t,3.0,4.0))*.9);show('fFeeds',ease(ramp(t,19.0,20.0)));draw('a9',eo(ramp(t,19.4,20.4)));
   // the service box pulses while the narration describes it
   const pulse=(t>16&&t<26)?.5+.5*Math.sin((t-16)*3):0;$('fBdb').style.borderColor=`rgba(245,181,68,${.4+.5*pulse})`;$('fBdb').style.boxShadow=`0 0 ${30*pulse}px rgba(245,181,68,.35)`;},
  end(t){ // 10 s
