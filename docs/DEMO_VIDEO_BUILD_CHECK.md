@@ -55,6 +55,20 @@ LANTERN_TTS_PROJECT=<project with Text-to-Speech enabled> [AGENT_PROVIDER=<provi
 ```
 The script prefers a human voice for the final cut; this track is for timing and a fallback.
 
-## Not built yet
+## Code-made cards (built)
 
-The live screen recording (needs the real agents and a person at the keyboard), lower thirds and progress strip, the code-made cards (title, room map, flow diagram, end card), the music bed and the six lantern chimes (their frames come from the recording). Ask for any of these once the recording exists.
+`demo-video/cards/*.mp4`, 1920x1080, 30 fps, silent, rendered from `demo-video/cards.html` (rebuild: serve the repo root on port 8123, then `node demo-video/render-cards.js <frames dir>` and encode each card with ffmpeg). Type is Fraunces and Manrope, the site's brand, not the script's Instrument Serif and Inter.
+
+| File | Length | Script slot | Place it on the timeline |
+| --- | --- | --- | --- |
+| `title.mp4` | 6.0 s | 0:06 to 0:12 cold-open title card | quote types in, chart chip, amber line pulses, "What she heard ≠ what the chart says" |
+| `brand.mp4` | 10.0 s | 0:12 to 0:24 title over the `w5_shift_change` clip | LANTERN, the tagline in three beats, six lanterns lighting; put it on top of the concept clip |
+| `rooms.mp4` | 20.0 s | 0:24 to 0:38 room map (Layout C) | the voice-over runs about 19 s at natural pace; the "2 AI agents · 4 rooms" line lands at 14.5 s |
+| `flow.mp4` | 28.0 s | 2:22 to 2:40 technical flow | arrows build in the voice-over's order; the SQLite box pulses from 16 s while the voice describes the service; the narration is 26 s |
+| `end.mp4` | 10.0 s | 2:46 to 2:58 end card | "Agents notice. People decide. Code enforces.", the wordmark, then the disclosure line (it says human roles were played from `scripts/demo_driver.py`) |
+
+Every card carries "Fictional data · not for clinical use" bottom right. Agent nodes say "via Switch" and name no provider, so nothing needs changing if the provider is not OpenCode.
+
+## Still to do
+
+The live screen recording (needs the real agents and a person at the keyboard), lower thirds and the progress strip, the music bed and the six lantern chimes (their frames come from the recording).
