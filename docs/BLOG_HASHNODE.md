@@ -10,6 +10,8 @@ That is not a bug. It is the entire idea.
 
 %[https://youtu.be/QR7r84tyBlo]
 
+> **What you're watching: the recorded fallback.** The agents in this video are rule-based stand-ins, labelled on screen. The real Switch path, with `intake` and `care-coordinator` running as Switch agents, passed this same case three runs in a row on Nov 4. The record service, checks and refusals in the video are real. [Exactly what is real, below.](#heading-the-night-our-agents-went-quiet)
+
 **[Read the code](https://github.com/sivasuryachandran/Lantern)** · By Siva Surya Chandran
 
 ![Same words. Only one counts.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-same-words.png)
@@ -78,7 +80,7 @@ Here it is in the room. Note Ana's `DECIDE` at the bottom of the thread, which c
 
 **The kitchen hears about it.** The diet change opens a tray task in `room-service`. Ana tries `DONE`: refused. Sam posts `DONE T-101-D17`: closed, with his name on it.
 
-**The language barrier gets a witness.** Patient 103 writes *"El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo."* The nurse sees the English beside the original, and the doctor's answer returns in Spanish, labelled as a translation, under her original words. It can be read aloud. It can never change an order.
+**The language barrier gets a witness.** Patient 103 writes *"El fisioterapeuta dijo que puedo sentarme en la silla para el almuerzo."* The nurse sees the English beside the original, and the doctor's answer returns in Spanish, labelled as a translation, under the doctor's original words. It can be read aloud. It can never change an order.
 
 **Two entries for one medicine get flagged, not hidden.** Acetaminophen recorded at 08:00 and again at 12:10 raises a possible double entry. Both stay visible. `GIVEN` is a record of what a nurse says happened; it never rewrites an order, and Lantern does not judge the dose.
 
@@ -102,13 +104,13 @@ One word from Ben, and the owner changes on the record.
 
 Here is the part most demo posts would leave out.
 
-On Nov 4, real agents in Switch Console ran the full case, three times in a row, with refusals tested live. Then we rebuilt them on OpenCode for the final version, and by recording night they had stopped answering Mattermost messages. We never found out why in time.
+On Nov 4, `intake` and `care-coordinator` ran as real agents in Switch Console and passed the full case, three times in a row, with refusals tested live. That run was not recorded. Then we rebuilt them on OpenCode for the final version, and by recording night they were not answering Mattermost messages. We did not find out why in time. `interpreter` and `scribe` have only ever run as code stand-ins.
 
-So we made the call you are watching: rule-based stand-ins play the agents in the recording, and every frame says so.
+So the video is a **recorded fallback**: rule-based stand-ins play all four agents, and every frame says so. It is not a live four-agent Switch run.
 
 ![We swapped the agents on recording night. The rules did not move.](https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketing-assets/docs/blog-assets/card-swap.png)
 
-It hurt. It also proved the thesis better than any slide could. **We replaced the agents and not one guardrail moved**, because no guardrail ever lived inside an agent. If your safety depends on your model behaving, a model change is a safety incident. Ours was a Tuesday.
+It hurt. It also proved the thesis better than any slide could. **We replaced the agents and not one guardrail moved**, because no guardrail ever lived inside an agent. If your safety depends on your model behaving, a model change is a safety incident. Ours was a bad night.
 
 | In the video | What it really is |
 | --- | --- |
