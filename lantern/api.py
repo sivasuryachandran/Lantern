@@ -76,7 +76,8 @@ def route(svc, path, q):
         out = []
         for r in db.execute("SELECT * FROM rooms ORDER BY room"):
             t = db.execute("SELECT SUM(status='done') d, COUNT(*) n FROM room_tasks WHERE room=?", (r["room"],)).fetchone()
-            out.append({**dict(r), "tasks_done": t["d"] or 0, "tasks_total": t["n"]})
+            open_ids = [x["id"] for x in db.execute("SELECT id FROM room_tasks WHERE room=? AND status='open' ORDER BY id", (r["room"],))]
+            out.append({**dict(r), "tasks_done": t["d"] or 0, "tasks_total": t["n"], "ready": not open_ids, "open_tasks": open_ids})
         return ok(out)
     if len(parts) == 2 and parts[0] == "rooms":
         r = db.execute("SELECT * FROM rooms WHERE room=?", (parts[1],)).fetchone()

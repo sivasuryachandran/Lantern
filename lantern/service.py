@@ -7,6 +7,7 @@ restart never duplicates a case, a thread root or a patient message.
 import copy
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import time
@@ -33,6 +34,10 @@ RE_GIVEN = re.compile(r"^GIVEN Case (\d+)\s+(.+?)\s+(\d{1,2}:\d{2})\s*$")
 RE_HANDOFF = re.compile(r"^HANDOFF Case (\d+)\s+open:\s*(\S.*)$", re.S)
 RE_ACCEPT = re.compile(r"^ACCEPT Case (\d+)\s*$")
 RE_DONE = re.compile(r"^DONE (T-[\w-]+)\s*$")
+RE_DISCHARGE = re.compile(r"^DISCHARGE (\d+)\s*$")
+RE_READY = re.compile(r"^READY (4W-\d+)\s*$")
+TURNOVER = [("housekeeping", "Terminal clean of bed, rails and bathroom"), ("linen", "Replace linen and privacy curtain"),
+            ("equipment", "Sanitize bedside equipment"), ("tray", "Collect the meal tray"), ("supplies", "Restock the supply cart")]
 RE_DECIDE = re.compile(r"^DECIDE Case (\d+) v(\d+) (\w+)=(\w+)\s*\n\s*EXPLAIN:\s*(\S.*)$", re.S)
 # Switch's own progress posts ("Working... 13s", "Queued...", "Starting a session"): no claims, never answered
 RE_STATUS = re.compile(r"^\s*(\*\*(Working|Worked|Queued)|Starting a session)", re.I)
@@ -356,7 +361,8 @@ class Service:
         if user.role != "nurse":
             return
         for rx, fn in ((RE_CONFIRM, self._confirm), (RE_REJECT, self._reject), (RE_GIVEN, self._given),
-                       (RE_HANDOFF, self._handoff), (RE_ACCEPT, self._accept)):
+                       (RE_HANDOFF, self._handoff), (RE_ACCEPT, self._accept),
+                       (RE_DISCHARGE, self._discharge), (RE_READY, self._ready)):
             m = rx.match(msg)
             if m:
                 fn(post, user, m)
@@ -484,6 +490,12 @@ class Service:
                         f"post {post.id}")
         self._audit(post, "GIVEN", "accepted")
         self._reply(post, "givenack", f"Recorded: {m.group(2)} given {m.group(3)} by {user.username}. No order was changed.")
+        twin = self.db.execute("SELECT * FROM meds WHERE patient_id=? AND lower(what)=lower(?) AND post_id!=? ORDER BY ts LIMIT 1",
+                               (c["patient_id"], m.group(2), post.id)).fetchone()
+        if twin is not None:                         # a second entry for the same medicine: flag it, never block or merge it
+            self._feed(f"feed:medwarn:{post.id}", "medication",
+                       f"Possible double entry: patient {c['patient_id']} already has {twin['what']} recorded at {twin['given_at']} "
+                       f"by {twin['recorded_by']}. A nurse or pharmacist should check. Both entries are kept. Fictional data.")
         self._feed(f"feed:med:{post.id}", "medication",
                    f"Patient {c['patient_id']}: {m.group(2)} given {m.group(3)}, recorded by {user.display} (Case {c['id']}). No order was changed. Fictional data.")
 
@@ -689,6 +701,51 @@ class Service:
                 self._event(self.db.execute("SELECT patient_id FROM rooms WHERE room=?", (task["room"],)).fetchone()["patient_id"],
                             task["source_case"], "task", "integration", note)
                 self.db.commit()
+
+    def _discharge(self, post, user, m):
+        """DISCHARGE <patient>: a nurse starts the room turnover. Opens the checklist for room service; changes no order."""
+        pid = m.group(1)
+        if self.chart(pid) is None:
+            self._audit(post, "DISCHARGE", "rejected", "unknown patient")
+            return
+        room = self.room_for(pid)
+        n = self.db.execute("SELECT COUNT(*) c FROM room_tasks WHERE id LIKE ?", (f"T-{pid}-X%-1",)).fetchone()["c"] + 1
+        ids = []
+        for i, (kind, text) in enumerate(TURNOVER, 1):
+            tid = f"T-{pid}-X{n}-{i}"
+            if self._open_room_task(tid, pid, kind, text, None):
+                ids.append(tid)
+        self._audit(post, "DISCHARGE", "accepted")
+        self._feed(f"feed:discharge:{post.id}", "room-service",
+                   f"Patient {pid} discharged: {len(ids)} turnover tasks for {room}: {', '.join(ids)}. "
+                   f"Room service: reply DONE <task id> as each is finished. Fictional data.")
+        self._reply(post, "dischargeack", f"Discharge recorded for patient {pid}. {len(ids)} turnover tasks opened for {room}.")
+
+    def _ready(self, post, user, m):
+        """READY <room>: is the room ready for the next patient? Answers from the task list and the previous occupant's precautions."""
+        r = self.db.execute("SELECT * FROM rooms WHERE room=?", (m.group(1),)).fetchone()
+        if r is None:
+            self._audit(post, "READY", "rejected", "unknown room")
+            return
+        open_ = [t["id"] for t in self.db.execute("SELECT id FROM room_tasks WHERE room=? AND status='open' ORDER BY id", (r["room"],))]
+        prec = "" if r["prev_precautions"] in ("", "none") else f" Previous occupant: {r['prev_precautions']}."
+        self._audit(post, "READY", "accepted")
+        self._reply(post, "readyans", f"{r['room']} is READY: all turnover tasks done.{prec}" if not open_ else
+                    f"{r['room']} is NOT ready: {len(open_)} open task(s): {', '.join(open_)}.{prec} A nurse decides; nothing was changed.")
+
+    def remind_overdue(self, minutes=None):
+        """Post one reminder per room task that has been open longer than `minutes` (LANTERN_TASK_AGING_MIN; unset means off)."""
+        minutes = minutes if minutes is not None else float(os.environ.get("LANTERN_TASK_AGING_MIN", "0") or 0)
+        if minutes <= 0 or self.roles is None:
+            return 0
+        cutoff, sent = self.now() - minutes * 60, 0
+        for t in self.db.execute("SELECT * FROM room_tasks WHERE status='open' AND ts<? ORDER BY id", (cutoff,)).fetchall():
+            age = int((self.now() - t["ts"]) // 60)
+            self._feed(f"feed:overdue:{t['id']}", "room-service",
+                       f"Reminder: {t['id']} ({t['text']}, {t['room']}) has been open {age} minutes. "
+                       f"Room service or the charge nurse: reply DONE {t['id']} or say what is blocking it. Fictional data.")
+            sent += 1
+        return sent
 
     def _service_room_post(self, post, user):
         """DONE <task id>: room service closes a room task (tray, linen, cleaning, supplies). Only room service can."""

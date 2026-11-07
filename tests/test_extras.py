@@ -412,3 +412,69 @@ class TestRoomsAndRoomService(unittest.TestCase):
         decide(chat, svc, confirm(chat, svc, case))
         summaries = [c[2]["fields"]["summary"] for c in calls if c[1].endswith("/issue") and c[0] == "POST"]
         self.assertTrue(any(s.startswith("Room service 4W-101") for s in summaries))
+
+
+class TestWholeWardExtras(unittest.TestCase):
+    def nurse(self, chat, svc, text, user="nurse-ana"):
+        svc.handle(chat.say(user, "nurse-station", text))
+
+    def test_discharge_opens_a_turnover_checklist_for_room_service(self):
+        chat, roles, db, svc = make_env()
+        self.nurse(chat, svc, "DISCHARGE 103")
+        ids = [r["id"] for r in db.execute("SELECT id FROM room_tasks WHERE id LIKE 'T-103-X1-%' ORDER BY id")]
+        self.assertEqual(len(ids), 5)
+        feed = chat.bot_posts("room-service")[-1]["message"]
+        self.assertIn("Patient 103 discharged", feed)
+        self.assertIn("DONE", feed)
+        svc.handle(chat.say("service-sam", "room-service", f"DONE {ids[0]}"))
+        self.assertEqual(db.execute("SELECT status FROM room_tasks WHERE id=?", (ids[0],)).fetchone()[0], "done")
+        self.nurse(chat, svc, "DISCHARGE 103")                       # a second discharge is a new numbered checklist
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM room_tasks WHERE id LIKE 'T-103-X2-%'").fetchone()[0], 5)
+
+    def test_only_nurses_can_start_a_discharge_and_unknown_patients_are_refused(self):
+        chat, roles, db, svc = make_env()
+        svc.handle(chat.say("service-sam", "nurse-station", "DISCHARGE 103"))
+        self.nurse(chat, svc, "DISCHARGE 999")
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM room_tasks WHERE id LIKE 'T-103-X%'").fetchone()[0], 0)
+        self.assertEqual(db.execute("SELECT outcome FROM audit WHERE action='DISCHARGE'").fetchone()[0], "rejected")
+
+    def test_ready_answers_from_the_task_list_and_precautions(self):
+        chat, roles, db, svc = make_env()
+        self.nurse(chat, svc, "READY 4W-102")
+        said = chat.bot_posts("nurse-station")[-1]["message"]
+        self.assertIn("NOT ready", said)
+        self.assertIn("T-102-3", said)
+        self.assertIn("contact precautions", said)
+        self.nurse(chat, svc, "READY 4W-103")
+        self.assertIn("is READY", chat.bot_posts("nurse-station")[-1]["message"])
+
+    def test_overdue_reminder_posts_once_per_task_and_is_off_without_a_threshold(self):
+        import time
+        chat, roles, db, svc = make_env()
+        self.assertEqual(svc.remind_overdue(), 0)                    # unset means off
+        svc.now = lambda: time.time() + 3 * 3600
+        n = svc.remind_overdue(minutes=120)
+        self.assertEqual(n, db.execute("SELECT COUNT(*) FROM room_tasks WHERE status='open'").fetchone()[0])
+        before = len(chat.bot_posts("room-service"))
+        svc.remind_overdue(minutes=120)                              # keyed: no repeat
+        self.assertEqual(len(chat.bot_posts("room-service")), before)
+
+    def test_second_entry_for_the_same_medicine_is_flagged_not_blocked(self):
+        chat, roles, db, svc = make_env()
+        _, case = open_case(chat, svc)
+        case = confirm(chat, svc, case)
+        for t in ("18:10", "18:40"):
+            svc.handle(chat.say("nurse-ana", "nurse-station", f"GIVEN Case {case['id']} anti-nausea (fictional) {t}", case["nurse_root"]))
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM meds").fetchone()[0], 2)          # both kept
+        warns = [p["message"] for p in chat.bot_posts("medication") if "Possible double entry" in p["message"]]
+        self.assertEqual(len(warns), 1)
+
+    def test_api_exposes_room_readiness(self):
+        chat, roles, db, svc = make_env()
+        from lantern import api
+        import json as _json
+        _, _, body = api.route(svc, "/api/rooms", {})
+        rooms = {r["room"]: r for r in _json.loads(body)}
+        self.assertFalse(rooms["4W-102"]["ready"])
+        self.assertTrue(rooms["4W-103"]["ready"])
+        self.assertIn("T-102-3", rooms["4W-102"]["open_tasks"])

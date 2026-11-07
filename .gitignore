@@ -3,3 +3,6 @@ __pycache__/
 *.db
 film/voice/
 demo-video/out/
+film/ai/
+Flow-*.dmg
+.DS_Store

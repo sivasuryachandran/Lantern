@@ -55,4 +55,6 @@ def run(interval=1.5):
                     svc.handle(p)
                 svc.db.execute("INSERT OR REPLACE INTO meta VALUES(?,?)", (key, str(cursor)))
                 svc.db.commit()
+        with lock:
+            svc.remind_overdue()
         time.sleep(interval)
