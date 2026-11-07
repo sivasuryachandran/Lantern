@@ -51,18 +51,14 @@ And here is the real Jira board. Each case became a task, room-service work sits
 And that decision turns into work somewhere else. A breakfast tray task opens for room service. A nurse can't close it. Only Sam from room service can, once it's delivered.
 
 14
-00:02:21,228 --> 00:02:29,628
-Patient 103 writes in Spanish. The interpreter's translation is read aloud (macOS Spanish voice).
-
-15
 00:02:30,228 --> 00:02:38,004
 Then it's seven o'clock. Ana hands over her cases. The coordinator briefs Ben on everything still open, and nothing changes hands until Ben says accept.
 
-16
+15
 00:02:39,104 --> 00:02:42,320
 When he does, ownership moves everywhere at once.
 
-17
+16
 00:02:43,420 --> 00:02:51,196
 That's Lantern. The agents notice things and carry them. People decide, and people accept. Switch keeps them all in the same room.
 
