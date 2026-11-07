@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Lantern works · Lantern</title>
+<meta name="description" content="One concern, three rooms, one confirmed answer: how Lantern moves a patient's remark to a clinician's decision and a named owner.">
+<meta name="theme-color" content="#0A101C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 48'%3E%3Cpath d='M8 12h14l2 22H6z' fill='%23F5B544'/%3E%3Cpath d='M8 12l7-6 7 6' fill='none' stroke='%23F5B544' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+<div class="wrap">
+  <a class="brand" href="index.html" aria-label="Lantern home"><span data-lantern style="display:inline-block;width:20px;height:32px"></span>LANTERN</a>
+  <nav class="nav-links" id="navlinks" aria-label="Main">
+    <a href="how-it-works.html" aria-current="page">How it works</a>
+    <a href="technical.html">Technical</a>
+    <a href="about.html">About</a>
+    <a href="index.html#film">Watch demo</a>
+    <a class="m-only" href="https://github.com/sivasuryachandran/Lantern">GitHub</a>
+  </nav>
+  <div class="nav-right">
+    <span class="badge">Fictional data · not for clinical use</span>
+    <a class="gh" href="https://github.com/sivasuryachandran/Lantern" aria-label="Lantern on GitHub"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.200 1.900.9 2.300.7.1-.5.3-.9.5-1.100-1.800-.2-3.600-.9-3.600-4 0-.9.3-1.600.8-2.100-.1-.2-.4-1 .1-2.100 0 0 .7-.2 2.200.8a7.500 7.500 0 0 1 4 0c1.500-1 2.200-.8 2.200-.8.4 1.100.2 1.900.1 2.100.5.6.8 1.300.8 2.100 0 3.100-1.900 3.800-3.600 4 .3.3.6.8.6 1.500v2.200c0 .2.1.5.6.4A8 8 0 0 0 8 0z"/></svg>GitHub</a>
+  </div>
+  <button class="menu-btn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+</div>
+<div class="m-strip"><span class="badge">Fictional data · not for clinical use</span></div>
+</header>
+
+<main id="main">
+<section class="page-hero"><div class="wrap">
+  <p class="eyebrow">How it works</p>
+  <h1>One concern, three rooms, one confirmed answer.</h1>
+  <p class="lead">Follow Case 17 from a passing remark at the bedside to a decision, a patient answer and a named owner. Scroll: each step lights a lantern.</p>
+</div></section>
+
+<div class="story-bar"><div class="wrap"><div class="wire" id="storyWire" data-wire="Said|Flagged|Confirmed|Receipted|Decided|Handed off" aria-label="Progress through the six steps"></div></div></div>
+<section style="padding:0"><div class="wrap"><div class="steps">
+<article class="step" data-i="0" aria-labelledby="s0">
+  <div class="num" aria-hidden="true">1</div>
+  <div><span class="room">patient-101</span><h3 id="s0">Said in passing</h3><p class="lead" style="font-size:1.05rem">A patient mentions it at the bedside tablet.</p><div class="quote">"Can't wait for breakfast. Dr. Lee said it's fine now that my procedure moved."</div><p class="muted" style="margin-top:12px">The chart says <span class="mono">diet = NPO</span> (v3). record-bot, plain code, forwards the message to the staff room. No agent is a member of the patient room.</p></div>
+</article>
+<article class="step" data-i="1" aria-labelledby="s1">
+  <div class="num" aria-hidden="true">2</div>
+  <div><span class="room">nurse-station</span><h3 id="s1">An AI teammate notices</h3><p class="lead" style="font-size:1.05rem">intake flags a <b>possible</b> discrepancy.</p><span class="chip amber">POSSIBLE DISCREPANCY</span><p class="muted" style="margin-top:12px">The card quotes the patient exactly next to the active order. The service accepts it only if the quote is an exact piece of the original message, then opens Case 17 and tells the patient their care team is checking.</p></div>
+</article>
+<article class="step" data-i="2" aria-labelledby="s2">
+  <div class="num" aria-hidden="true">3</div>
+  <div><span class="room">nurse-station · Case 17 thread</span><h3 id="s2">A nurse confirms</h3><p class="lead" style="font-size:1.05rem">A person says it is real.</p><span class="cmd">CONFIRM Case 17</span><p class="muted" style="margin-top:12px">Until a nurse replies, it stays a possible discrepancy. Nothing reaches a doctor on an agent's say-so alone.</p></div>
+</article>
+<article class="step" data-i="3" aria-labelledby="s3">
+  <div class="num" aria-hidden="true">4</div>
+  <div><span class="room">doctor-review</span><h3 id="s3">With receipts</h3><p class="lead" style="font-size:1.05rem">care-coordinator carries the case into the doctor's room.</p><span class="chip green">✓ VERIFIED</span><p class="muted" style="margin-top:12px">It gets chart facts from a lookup tool that logs every call. Under each cited fact, record-bot posts a card built from that log: ✓ verified, or ⚠ when there is no matching lookup or the chart has moved on.</p></div>
+</article>
+<article class="step" data-i="4" aria-labelledby="s4">
+  <div class="num" aria-hidden="true">5</div>
+  <div><span class="room">doctor-review · Case 17 thread</span><h3 id="s4">A clinician decides</h3><p class="lead" style="font-size:1.05rem">Dr. Lee places the new order. She replies in the case thread.</p><span class="cmd">DECIDE Case 17 v3 diet=regular</span><p class="muted" style="margin-top:12px">The service verifies author, role, room, thread, edit status and chart version, then bumps the simulated chart v3 → v4. The patient receives her words verbatim, with "Following up: nurse-ana". Any other attempt is refused and logged.</p></div>
+</article>
+<article class="step" data-i="5" aria-labelledby="s5">
+  <div class="num" aria-hidden="true">6</div>
+  <div><span class="room">nurse-station</span><h3 id="s5">The next shift owns it</h3><p class="lead" style="font-size:1.05rem">Shift change.</p><span class="cmd">GIVEN</span> <span class="cmd">HANDOFF</span> <span class="cmd">ACCEPT Case 17</span><p class="muted" style="margin-top:12px">The outgoing nurse records what was given and what is still open. The incoming nurse accepts. The patient's owner line becomes "Following up: nurse-ben".</p></div>
+</article>
+</div></div></section>
+
+<section aria-labelledby="map">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Room map</p><h2 id="map">Four rooms. Two are locked to agents.</h2></div>
+    <div class="rooms reveal">
+      <div class="tile locked"><h3>patient-101</h3><p class="muted" style="margin:0">The patient's own room.</p><div class="lock"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg> no agents</div></div>
+      <div class="arrow" aria-label="then"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5"/></svg></div>
+      <div class="tile"><h3>nurse-station</h3><p class="muted" style="margin:0">Flag, confirm, hand off.</p><div class="who"><span class="chip cyan">intake</span><span class="chip cyan">care-coordinator</span></div></div>
+      <div class="arrow" aria-label="then"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5"/></svg></div>
+      <div class="tile"><h3>doctor-review</h3><p class="muted" style="margin:0">Evidence, then the decision.</p><div class="who"><span class="chip cyan">care-coordinator</span><span class="chip violet">Dr. Lee</span></div></div>
+      <div class="arrow off" aria-hidden="true"></div>
+      <div class="tile locked"><h3>patient-102</h3><p class="muted" style="margin:0">Another patient. Cannot open patient-101.</p><div class="lock"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg> no agents</div></div>
+    </div>
+    <p class="rooms-note">The answer returns to the patient only through record-bot, which sends a fixed template or the doctor's own words. Isolation is Switch room membership, not a prompt.</p>
+  </div>
+</section>
+
+<section aria-labelledby="trust">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Trust model</p><h2 id="trust">Six kinds of record. Never merged.</h2>
+    <p class="lead">What a patient said, what an agent drafted and what a person confirmed are stored apart, so the timeline always shows who said what.</p></div>
+    <div class="grid3">
+      <div class="card reveal"><span class="chip">SAID</span><h3 style="margin-top:12px">Patient's words</h3><p class="muted">Verbatim, as posted.</p></div>
+      <div class="card reveal"><span class="chip amber">DRAFT (UNVERIFIED)</span><h3 style="margin-top:12px">Agent claim</h3><p class="muted">A possible discrepancy, never a fact.</p></div>
+      <div class="card reveal"><span class="chip cyan">NURSE CONFIRMED</span><h3 style="margin-top:12px">Nurse's check</h3><p class="muted">A person says the conflict is real.</p></div>
+      <div class="card reveal"><span class="chip green">CLINICIAN CONFIRMED</span><h3 style="margin-top:12px">Doctor's decision</h3><p class="muted">The only entry that changes the chart.</p></div>
+      <div class="card reveal"><span class="chip amber">SIMULATED CHART</span><h3 style="margin-top:12px">Versioned chart</h3><p class="muted">v3 → v4, old order kept as history.</p></div>
+      <div class="card reveal"><span class="chip violet">OWNER · HANDOFF</span><h3 style="margin-top:12px">Who follows up</h3><p class="muted">Changes only when the incoming nurse accepts.</p></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="rec">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">Evidence receipts</p><h2 id="rec">Every cited fact shows its source.</h2>
+    <p class="lead">Like a good colleague: the claim comes with where it came from. The card is built from the service's own log, not from the agent's words.</p></div>
+    <div class="grid2" style="gap:28px">
+      <div class="slip ok reveal"><b>Receipt · lookup #31</b>
+        <dl><dt>cited</dt><dd>[proc-1 v3 · lookup #31 = Thu 9:00]</dd><dt>agent</dt><dd>care-coordinator</dd><dt>entry</dt><dd>proc-1 at chart v3</dd><dt>log value</dt><dd>Thu 9:00</dd></dl>
+        <span class="stamp">✓ VERIFIED</span></div>
+      <div class="slip stale reveal"><b>Receipt · lookup #30</b>
+        <dl><dt>cited</dt><dd>[ord-diet-1 v3 · lookup #30 = NPO]</dd><dt>agent</dt><dd>care-coordinator</dd><dt>entry</dt><dd>ord-diet-1 at chart v3</dd><dt>now</dt><dd>chart is v4</dd></dl>
+        <span class="stamp">⚠ STALE</span></div>
+    </div>
+    <p class="muted" style="margin-top:16px;font-size:.9rem">No matching lookup, the wrong value, the wrong entry or version, or a chart that has moved on: none of these get a check mark. Anything an agent says without a citation is shown as unverified interpretation.</p>
+  </div>
+</section>
+
+<section aria-labelledby="wo">
+  <div class="wrap">
+    <div class="sec-head reveal"><p class="eyebrow">What breaks without Switch</p><h2 id="wo">Three things nothing else was doing.</h2></div>
+    <div class="grid3">
+      <div class="card reveal"><h3>Nothing carries the case</h3><p class="muted">Without Switch there is no teammate in the doctor's room to summarize the evidence and answer from the live chart.</p></div>
+      <div class="card reveal"><h3>Nothing keeps agents out</h3><p class="muted">Isolation is room membership. No agent is a member of any patient room, and one patient's account cannot open another's.</p></div>
+      <div class="card reveal"><h3>Nothing makes the agent accountable</h3><p class="muted">The lookup tool is plain code that logs every call. The receipt cards come from that log.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+<div class="wrap">
+  <div>
+    <p><b style="color:var(--ink);letter-spacing:.2em">LANTERN</b><br>No concern left in the dark.</p>
+    <p>Built for the Flip the Switch hackathon: WeMakeDevs × DevTools Academy × Switch. Every person and record shown is invented. Not clinical software, not for clinical use.</p>
+  </div>
+  <ul aria-label="Links">
+    <li><a href="https://github.com/sivasuryachandran/Lantern">GitHub</a></li>
+    <li><a href="#" data-placeholder>Demo video [LINK]</a></li>
+    <li><a href="#" data-placeholder>Blog [LINK]</a></li>
+  </ul>
+</div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
