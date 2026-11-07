@@ -10,6 +10,8 @@ Every morning at seven a nurse hands her patients to someone new, and that is wh
 
 ## Watch the demo
 
+**YouTube: https://youtu.be/QR7r84tyBlo**
+
 [`recordings/final/lantern_demo_3min.mp4`](recordings/final/lantern_demo_3min.mp4) (2:52, captions in `.srt`). Chapters: [`chapters.txt`](recordings/final/chapters.txt). Every cut, speed change and insert: [`cutlist.md`](recordings/final/cutlist.md). What was and was not recorded: [`shotlist_actual.md`](recordings/final/shotlist_actual.md).
 
 How honest the video is:

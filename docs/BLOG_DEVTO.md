@@ -10,7 +10,7 @@ cover_image: https://raw.githubusercontent.com/sivasuryachandran/Lantern/marketi
 
 > **Fictional patients, a simulated chart, human roles played by our team.** Lantern is a hackathon prototype. It is not a clinical system, not an EHR, and not medical advice.
 
-**Demo video (2:52):** [ADD YOUTUBE LINK] · **Code:** [github.com/sivasuryachandran/Lantern](https://github.com/sivasuryachandran/Lantern)
+**Demo video (2:52):** [Watch on YouTube](https://youtu.be/QR7r84tyBlo) · **Code:** [github.com/sivasuryachandran/Lantern](https://github.com/sivasuryachandran/Lantern)
 
 ## The end of a shift
 
