@@ -7,6 +7,7 @@ Rebuild this fresh after the event opens (Tue Nov 3, 10:31 AM PT); it takes abou
    - `intake`: nurse-station only
    - `care-coordinator`: nurse-station and doctor-review
    Their Mattermost usernames must match `config/roles.yaml` (or edit that file).
+   - **Restrict who can address each agent.** A new agent is owner-only, so record-bot is ignored until you change "Who can talk to your agent". Do not use "Anyone": Switch also puts agents in Mattermost's Town Square, where patient accounts are members. Use custom rules instead: users any, agents none, rooms `nurse-station` for intake, `nurse-station` and `doctor-review` for care-coordinator.
 3. Create users and the four private rooms (membership comes from `config/roles.yaml`):
 
    ```bash

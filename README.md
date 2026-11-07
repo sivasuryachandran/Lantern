@@ -11,7 +11,7 @@ The rule underneath: **only a clinician's verified decision changes the record.*
 ## How Switch is used (and what breaks without it)
 
 - **Nothing carries the case between rooms.** care-coordinator, a real coding agent in a Switch room, summarizes the evidence in `doctor-review` and answers the doctor from the live chart. Without Switch there is no teammate in that room.
-- **Nothing stops an agent joining a patient room.** Isolation is Switch room membership, not a prompt: no agent is a member of any patient room, and patient 102's account cannot open patient 101's.
+- **Nothing stops an agent joining a patient room.** Isolation is Switch room membership and addressing rules, not a prompt: no agent is a member of any patient room, each agent's "Who can talk to your agent" lists only its staff rooms (so `@intake` from a patient in Mattermost's Town Square is refused by Switch), and patient 102's account cannot open patient 101's.
 - **Nothing makes the agent accountable.** care-coordinator gets chart facts only from a lookup tool (`GET /chart/<patient>/<entry>`) that is plain code: every call is logged with a lookup number, entry, chart version, time and agent. When it cites `[proc-1 v3 · lookup #31 = Thu 9:00]`, record-bot replies in the thread with a card built from the log, not from the agent's words, marked ✓ verified or ⚠ (no matching lookup, wrong value, wrong entry/version/agent/patient, or stale after the chart changed). Only cited source facts are checked; anything else the agent writes is shown as unverified interpretation.
 
 ### Who does what
@@ -19,6 +19,30 @@ The rule underneath: **only a clinician's verified decision changes the record.*
 - **Agents do the teamwork, through Switch.** intake asks the nurse; care-coordinator briefs the doctor and the incoming nurse. They are members of the staff rooms and reply in the same threads as the people.
 - **Code handles the patient edge and the checks.** record-bot forwards patient messages, starts the case threads, sends the fixed patient templates and the doctor's own words, and posts short verdicts (a ✓ or ⚠ under an agent's cited facts). It uses no model and makes no judgments.
 - **Evidence receipts are how a good teammate works, not distrust.** Every claim the agent makes comes with its source, the way a good colleague's would; the system just shows that the source says what the claim says.
+
+## Rooms
+
+```mermaid
+flowchart LR
+  P101["patient-101<br/>(patient + record-bot)"] -->|"record-bot forwards"| NS
+  P102["patient-102<br/>(patient + record-bot)"] -.->|"no access to 101"| P101
+  subgraph NS["nurse-station"]
+    direction TB
+    I["intake (agent)"]
+    N["nurse-ana, nurse-ben"]
+  end
+  subgraph DR["doctor-review"]
+    direction TB
+    C["care-coordinator (agent)"]
+    D["dr-lee, nurse-ana"]
+  end
+  NS -->|"nurse CONFIRM"| DR
+  DR -->|"DECIDE (doctor only)"| R["record service<br/>simulated chart v3 to v4"]
+  R -->|"fixed template or doctor's words"| P101
+  L["lookup tool + log<br/>127.0.0.1:8099"] -.->|"agent facts and receipts"| C
+```
+
+record-bot is plain code and is in every room. No agent is in a patient room.
 
 ## Case 17 in one minute
 
@@ -55,7 +79,9 @@ python3 -m venv .venv && .venv/bin/pip install pyyaml
 .venv/bin/python -m unittest discover -s tests        # the must-pass tests, no network needed
 ```
 
-With Switch and its bundled Mattermost running, follow [docs/SWITCH_SETUP.md](docs/SWITCH_SETUP.md): create the two agents (instructions in `docs/agents/`), run `scripts/setup_mattermost.py`, then `python -m lantern run`.
+On Windows use `.venv/Scripts/python` and Git Bash for `scripts/start.sh`.
+
+With Switch and its bundled Mattermost running, follow [docs/SWITCH_SETUP.md](docs/SWITCH_SETUP.md): create the two agents (instructions in `docs/agents/`), restrict who can address them, run `scripts/setup_mattermost.py`, then `scripts/start.sh` (or `python -m lantern run`). Mattermost's port is chosen by Switch Console, so set `MM_URL` and `MM_TEAM` to match.
 
 ```bash
 .venv/bin/python -m lantern timeline 101 patient   # or nurse / doctor
@@ -64,7 +90,7 @@ With Switch and its bundled Mattermost running, follow [docs/SWITCH_SETUP.md](do
 
 ## Tests
 
-`tests/test_must_pass.py` covers the plan's seven must-pass tests plus case numbering and reject/handoff edge cases (24 tests). Test 1's "three casual mentions" is checked at the service level (each card opens a possible, never confirmed, case); whether the *LLM* produces the card for each phrasing is checked live with `scripts/check_intake.py`.
+`tests/test_must_pass.py` covers the plan's seven must-pass tests plus case numbering and reject/handoff edge cases (24 tests); `tests/test_extras.py` adds evidence receipts, the lookup endpoints, buttons, the clip and the timeline views (26 more, 50 in total). Test 1's "three casual mentions" is checked at the service level (each card opens a possible, never confirmed, case); whether the *LLM* produces the card for each phrasing is checked live with `scripts/check_intake.py`.
 
 ## Layout
 
@@ -107,7 +133,8 @@ Calendar and Jira are called directly by the record service rather than as Switc
   - Full Case 17 (patient, intake card, nurse CONFIRM, care-coordinator summary with ✓ evidence cards, doctor DECIDE, chart v3 to v4, patient told) passed three runs in a row on a fresh database.
   - Refused live: DECIDE from a nurse, from a patient, as a top-level post, and with a stale chart version. Other refusals (edited post, another case's thread) are covered by unit tests only.
   - GIVEN, HANDOFF and ACCEPT moved ownership from nurse-ana to nurse-ben, with a care-coordinator brief.
-  - patient-102's account gets 403 reading patient-101. Switch refusing intake in a patient room has not been tested.
+  - patient-102's account gets 403 reading patient-101. No agent is a member of either patient room (checked against Mattermost membership). Switch's own refusal of an agent in a patient room was not tested: its Console does not list rooms an agent is not in.
+  - Both agents were also in Mattermost's default Town Square, where the patient accounts are members and Mattermost cannot remove anyone. Each agent's "Who can talk to your agent" is therefore set to custom rules (users any, agents none, rooms nurse-station for intake, nurse-station and doctor-review for care-coordinator). `@intake` from patient-101 in Town Square then got: "You're not permitted to direct messages to me in this room — my operator has restricted who can address me here." Case 17 passed again with these rules on.
 - Not yet run: live buttons, and live Jira/Calendar calls (request shapes are unit-tested against a fake HTTP layer only).
 - Known limit: a crash in the middle of a command can drop that command's follow-up message; restarts never duplicate anything.
 - `scripts/demo_driver.py` and `scripts/live_e2e.py`, run again on Nov 6 against a local Mattermost with the full loop, the dashboard and the lookup tool; both the intake and care-coordinator accounts were scripted stand-ins in that run.

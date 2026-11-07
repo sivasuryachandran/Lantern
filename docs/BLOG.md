@@ -14,7 +14,7 @@ Agents extract and route. A small deterministic record service is the only thing
 
 - **Rooms are the boundary.** Four rooms, and no agent is a member of any patient room, so no agent can post there. Patient 102 cannot open patient 101.
 - **Agents work alongside people.** intake asks the nurse what the patient meant. care-coordinator, a real coding agent, answers the doctor from the live chart.
-- **The service checks the agents.** Every `(chart: id, vN)` citation is verified. Invented ones are flagged in the thread.
+- **The service checks the agents.** Every citation like `[proc-1 v3 · lookup #31 = Thu 9:00]` is checked against the lookup log, and the thread shows what the log says, not what the agent said. A missing, wrong or stale one gets a warning instead of a check mark.
 
 ## What I'd tell the next builder
 
